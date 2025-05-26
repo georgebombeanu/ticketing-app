@@ -4,10 +4,13 @@ using TicketingApp.DataAccess;
 using TicketingApp.DataAccess.Context;
 using TicketingApp.Services.Common.Mapping;
 using TicketingApp.Services.Common.Security;
+using TicketingApp.Services.Interfaces;
+using TicketingApp.Services.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers(); // <- This was missing!
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -22,6 +25,16 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Register Security Services
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+// Register Application Services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<ITicketCategoryService, TicketCategoryService>();
+builder.Services.AddScoped<ITicketPriorityService, TicketPriorityService>();
+builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(cfg =>
@@ -42,6 +55,15 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TicketingContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    var seeder = new TicketingApp.API.Data.DatabaseSeeder(context, passwordHasher);
+    await seeder.SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

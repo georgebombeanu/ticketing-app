@@ -58,7 +58,15 @@ namespace TicketingApp.DataAccess.Repositories
 
         public async Task<IEnumerable<User>> GetActiveUsersAsync()
         {
-            return await _context.Users.Where(u => u.IsActive).ToListAsync();
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Department)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Team)
+                .Where(u => u.IsActive)
+                .ToListAsync();
         }
 
         public async Task<User> GetUserWithRolesAndAuthDataAsync(string email)

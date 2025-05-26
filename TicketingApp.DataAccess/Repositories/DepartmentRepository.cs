@@ -41,7 +41,10 @@ namespace TicketingApp.DataAccess.Repositories
 
         public async Task<IEnumerable<Department>> GetActiveDepartmentsAsync()
         {
-            return await _context.Departments.Where(d => d.IsActive).ToListAsync();
+            return await _context.Departments
+                .Include(d => d.Teams.Where(t => t.IsActive))
+                .Where(d => d.IsActive)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Department>> GetDepartmentsByUserIdAsync(int userId)
