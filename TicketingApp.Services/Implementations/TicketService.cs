@@ -34,7 +34,7 @@ public class TicketService : ITicketService
 
     public async Task<IEnumerable<TicketDto>> GetAllAsync()
     {
-        var tickets = await _unitOfWork.Tickets.GetAllAsync();
+        var tickets = await _unitOfWork.Tickets.GetAllTicketsWithDetailsAsync();
         return _mapper.Map<IEnumerable<TicketDto>>(tickets);
     }
 
@@ -70,9 +70,13 @@ public class TicketService : ITicketService
                 throw new ValidationException("Invalid assigned user");
         }
 
-        var defaultStatus = await _unitOfWork.TicketStatuses.GetByIdAsync(1);
+        // Get the first available status (usually "Open")
+        var allStatuses = await _unitOfWork.TicketStatuses.GetAllAsync();
+        var defaultStatus = allStatuses.FirstOrDefault(s => s.Name.ToLower().Contains("open"))
+                           ?? allStatuses.FirstOrDefault();
+
         if (defaultStatus == null)
-            throw new ValidationException("Default ticket status not found");
+            throw new ValidationException("No ticket status found in the system");
 
         var ticket = _mapper.Map<Ticket>(createTicketDto);
         ticket.CreatedById = createdByUserId;
@@ -253,9 +257,9 @@ public class TicketService : ITicketService
     public async Task<TicketDto> CloseTicketAsync(int ticketId, int closedByUserId)
     {
         var closedStatuses = await _unitOfWork.TicketStatuses.GetAllAsync();
-        var closedStatus = closedStatuses.FirstOrDefault(s => 
+        var closedStatus = closedStatuses.FirstOrDefault(s =>
             s.Name.ToLower().Contains("closed") || s.Name.ToLower().Contains("resolved"));
-        
+
         if (closedStatus == null)
             throw new ValidationException("Closed status not found");
 
@@ -265,9 +269,9 @@ public class TicketService : ITicketService
     public async Task<TicketDto> ReopenTicketAsync(int ticketId, int reopenedByUserId)
     {
         var openStatuses = await _unitOfWork.TicketStatuses.GetAllAsync();
-        var openStatus = openStatuses.FirstOrDefault(s => 
+        var openStatus = openStatuses.FirstOrDefault(s =>
             s.Name.ToLower().Contains("open") || s.Name.ToLower().Contains("reopened"));
-        
+
         if (openStatus == null)
             throw new ValidationException("Open status not found");
 

@@ -10,7 +10,7 @@ using TicketingApp.Services.Implementations;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers(); // <- This was missing!
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -36,11 +36,16 @@ builder.Services.AddScoped<ITicketCategoryService, TicketCategoryService>();
 builder.Services.AddScoped<ITicketPriorityService, TicketPriorityService>();
 builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
 
-// Register AutoMapper
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddMaps(Assembly.GetAssembly(typeof(DepartmentMappingProfile)));
-});
+// Register AutoMapper with all profiles
+builder.Services.AddAutoMapper(typeof(UserMappingProfile));
+builder.Services.AddAutoMapper(typeof(DepartmentMappingProfile));
+builder.Services.AddAutoMapper(typeof(TeamMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketCommentMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketAttachmentMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketCategoryMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketPriorityMappingProfile));
+builder.Services.AddAutoMapper(typeof(TicketStatusMappingProfile));
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -61,6 +66,10 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TicketingContext>();
     var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+    // Ensure database is created
+    await context.Database.EnsureCreatedAsync();
+
     var seeder = new TicketingApp.API.Data.DatabaseSeeder(context, passwordHasher);
     await seeder.SeedAsync();
 }

@@ -20,5 +20,6 @@ namespace TicketingApp.DataAccess.Repositories.Interfaces
             DateTime startDate,
             DateTime endDate
         );
+        Task<IEnumerable<Ticket>> GetAllTicketsWithDetailsAsync();
     }
 }

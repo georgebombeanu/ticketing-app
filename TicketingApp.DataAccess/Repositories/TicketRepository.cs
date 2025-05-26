@@ -123,5 +123,19 @@ namespace TicketingApp.DataAccess.Repositories
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Ticket>> GetAllTicketsWithDetailsAsync()
+        {
+            return await _context
+                .Tickets.Include(t => t.Category)
+                .Include(t => t.Priority)
+                .Include(t => t.Status)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
     }
 }
