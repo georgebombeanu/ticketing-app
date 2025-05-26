@@ -16,10 +16,7 @@ namespace TicketingApp.DataAccess.Repositories.Interfaces
         Task<IEnumerable<Ticket>> GetTicketsByPriorityAsync(int priorityId);
         Task<IEnumerable<Ticket>> GetTicketsByCategoryAsync(int categoryId);
         Task<IEnumerable<Ticket>> GetActiveTicketsAsync();
-        Task<IEnumerable<Ticket>> GetTicketsCreatedBetweenDatesAsync(
-            DateTime startDate,
-            DateTime endDate
-        );
+        Task<IEnumerable<Ticket>> GetTicketsCreatedBetweenDatesAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<Ticket>> GetAllTicketsWithDetailsAsync();
     }
 }

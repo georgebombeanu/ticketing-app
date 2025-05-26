@@ -36,6 +36,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.CreatedById == userId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -46,6 +51,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.AssignedToId == userId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -56,6 +66,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.DepartmentId == departmentId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -66,6 +81,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.TeamId == teamId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -75,7 +95,12 @@ namespace TicketingApp.DataAccess.Repositories
         {
             return await _context
                 .Tickets.Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
                 .Include(t => t.Department)
+                .Include(t => t.Team)
+                .Include(t => t.Status)
                 .Where(t => t.StatusId == statusId)
                 .OrderByDescending(t => t.UpdatedAt)
                 .ToListAsync();
@@ -85,7 +110,12 @@ namespace TicketingApp.DataAccess.Repositories
         {
             return await _context
                 .Tickets.Include(t => t.Status)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
                 .Include(t => t.Department)
+                .Include(t => t.Team)
+                .Include(t => t.Priority)
                 .Where(t => t.PriorityId == priorityId)
                 .OrderByDescending(t => t.UpdatedAt)
                 .ToListAsync();
@@ -96,6 +126,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
+                .Include(t => t.Category)
                 .Where(t => t.CategoryId == categoryId)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
@@ -106,6 +141,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.ClosedAt == null)
                 .OrderByDescending(t => t.UpdatedAt)
                 .ToListAsync();
@@ -119,6 +159,11 @@ namespace TicketingApp.DataAccess.Repositories
             return await _context
                 .Tickets.Include(t => t.Status)
                 .Include(t => t.Priority)
+                .Include(t => t.Category)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Department)
+                .Include(t => t.Team)
                 .Where(t => t.CreatedAt >= startDate && t.CreatedAt <= endDate)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();

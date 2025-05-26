@@ -6,8 +6,15 @@ using TicketingApp.Services.Common.Mapping;
 using TicketingApp.Services.Common.Security;
 using TicketingApp.Services.Interfaces;
 using TicketingApp.Services.Implementations;
+using TicketingApp.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -36,16 +43,11 @@ builder.Services.AddScoped<ITicketCategoryService, TicketCategoryService>();
 builder.Services.AddScoped<ITicketPriorityService, TicketPriorityService>();
 builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
 
-// Register AutoMapper with all profiles
-builder.Services.AddAutoMapper(typeof(UserMappingProfile));
-builder.Services.AddAutoMapper(typeof(DepartmentMappingProfile));
-builder.Services.AddAutoMapper(typeof(TeamMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketCommentMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketAttachmentMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketCategoryMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketPriorityMappingProfile));
-builder.Services.AddAutoMapper(typeof(TicketStatusMappingProfile));
+// Register AutoMapper
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddMaps(Assembly.GetAssembly(typeof(DepartmentMappingProfile)));
+});
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -61,15 +63,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 // Seed the database
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TicketingContext>();
     var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-
-    // Ensure database is created
-    await context.Database.EnsureCreatedAsync();
-
     var seeder = new TicketingApp.API.Data.DatabaseSeeder(context, passwordHasher);
     await seeder.SeedAsync();
 }
