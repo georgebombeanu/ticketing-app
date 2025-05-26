@@ -3,40 +3,49 @@ using System.Collections.Generic;
 
 namespace TicketingApp.Services.DTOs;
 
-public record UserDto(
-    int Id,
-    string Email,
-    string FirstName,
-    string LastName,
-    bool IsActive,
-    DateTime CreatedAt,
-    DateTime? LastLogin,
-    ICollection<UserRoleDto> UserRoles
-);
+public class UserDto
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastLogin { get; set; }
+    public ICollection<UserRoleDto> UserRoles { get; set; } = new List<UserRoleDto>();
+}
 
-public record UserRoleDto(
-    int RoleId,
-    string RoleName,
-    int? DepartmentId,
-    string? DepartmentName,
-    int? TeamId,
-    string? TeamName,
-    DateTime AssignedAt
-);
+public class UserRoleDto
+{
+    public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
+    public int? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
+    public int? TeamId { get; set; }
+    public string? TeamName { get; set; }
+    public DateTime AssignedAt { get; set; }
+}
 
-public record CreateUserDto(
-    string Email,
-    string Password,
-    string FirstName,
-    string LastName,
-    ICollection<CreateUserRoleDto> UserRoles
-);
+public class CreateUserDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public ICollection<CreateUserRoleDto> UserRoles { get; set; } = new List<CreateUserRoleDto>();
+}
 
-public record CreateUserRoleDto(int RoleId, int? DepartmentId, int? TeamId);
+public class CreateUserRoleDto
+{
+    public int RoleId { get; set; }
+    public int? DepartmentId { get; set; }
+    public int? TeamId { get; set; }
+}
 
-public record UpdateUserDto(
-    string FirstName,
-    string LastName,
-    bool IsActive,
-    ICollection<CreateUserRoleDto> UserRoles
-);
+public class UpdateUserDto
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public ICollection<CreateUserRoleDto> UserRoles { get; set; } = new List<CreateUserRoleDto>();
+}

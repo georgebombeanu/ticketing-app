@@ -44,7 +44,12 @@ public class AuthService : IAuthService
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwtTokenGenerator.AccessTokenExpirationMinutes);
 
-        return new LoginResponseDto(accessToken, expiresAt, _mapper.Map<UserDto>(user));
+        return new LoginResponseDto
+        {
+            AccessToken = accessToken,
+            ExpiresAt = expiresAt,
+            User = _mapper.Map<UserDto>(user)
+        };
     }
 
     public async Task<bool> ChangePasswordAsync(

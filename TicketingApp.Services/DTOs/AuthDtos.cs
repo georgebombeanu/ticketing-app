@@ -1,7 +1,22 @@
+using System;
+
 namespace TicketingApp.Services.DTOs;
 
-public record LoginRequestDto(string Email, string Password);
+public class LoginRequestDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
 
-public record LoginResponseDto(string AccessToken, DateTime ExpiresAt, UserDto User);
+public class LoginResponseDto
+{
+    public string AccessToken { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public UserDto User { get; set; } = new UserDto();
+}
 
-public record ChangePasswordRequestDto(string CurrentPassword, string NewPassword);
+public class ChangePasswordRequestDto
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+}

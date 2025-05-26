@@ -43,10 +43,19 @@ builder.Services.AddScoped<ITicketCategoryService, TicketCategoryService>();
 builder.Services.AddScoped<ITicketPriorityService, TicketPriorityService>();
 builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
 
-// Register AutoMapper
+// Register AutoMapper with all profiles
 builder.Services.AddAutoMapper(cfg =>
 {
-    cfg.AddMaps(Assembly.GetAssembly(typeof(DepartmentMappingProfile)));
+    // Add all mapping profiles
+    cfg.AddProfile<UserMappingProfile>();
+    cfg.AddProfile<DepartmentMappingProfile>();
+    cfg.AddProfile<TeamMappingProfile>();
+    cfg.AddProfile<TicketMappingProfile>();
+    cfg.AddProfile<TicketCommentMappingProfile>();
+    cfg.AddProfile<TicketAttachmentMappingProfile>();
+    cfg.AddProfile<TicketCategoryMappingProfile>();
+    cfg.AddProfile<TicketPriorityMappingProfile>();
+    cfg.AddProfile<TicketStatusMappingProfile>();
 });
 
 // Add CORS

@@ -1,5 +1,20 @@
-public record TicketStatusDto(int Id, string Name, string Description);
+namespace TicketingApp.Services.DTOs;
 
-public record CreateTicketStatusDto(string Name, string Description);
+public class TicketStatusDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
 
-public record UpdateTicketStatusDto(string Name, string Description);
+public class CreateTicketStatusDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class UpdateTicketStatusDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}

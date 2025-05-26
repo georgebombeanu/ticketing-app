@@ -1,31 +1,42 @@
-// TicketingApp.Services/DTOs/TeamDtos.cs
 using System;
 using System.Collections.Generic;
 
 namespace TicketingApp.Services.DTOs;
 
-public record TeamDto(
-    int Id,
-    int DepartmentId,
-    string Name,
-    string Description,
-    DateTime CreatedAt,
-    bool IsActive,
-    string DepartmentName
-);
+public class TeamDto
+{
+    public int Id { get; set; }
+    public int DepartmentId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+}
 
-public record TeamDetailsDto(
-    int Id,
-    int DepartmentId,
-    string Name,
-    string Description,
-    DateTime CreatedAt,
-    bool IsActive,
-    string DepartmentName,
-    ICollection<UserSummaryDto> Users,
-    int ActiveTicketsCount
-);
+public class TeamDetailsDto
+{
+    public int Id { get; set; }
+    public int DepartmentId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public ICollection<UserSummaryDto> Users { get; set; } = new List<UserSummaryDto>();
+    public int ActiveTicketsCount { get; set; }
+}
 
-public record CreateTeamDto(int DepartmentId, string Name, string Description);
+public class CreateTeamDto
+{
+    public int DepartmentId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
 
-public record UpdateTeamDto(string Name, string Description, bool IsActive);
+public class UpdateTeamDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}

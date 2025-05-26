@@ -1,27 +1,53 @@
-public record FAQCategoryDto(
-    int Id,
-    string Name,
-    string Description,
-    bool IsActive,
-    ICollection<FAQItemDto> FAQItems
-);
+using System;
+using System.Collections.Generic;
 
-public record FAQItemDto(
-    int Id,
-    int CategoryId,
-    string Question,
-    string Answer,
-    int CreatedById,
-    string CreatedByName,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    bool IsActive
-);
+namespace TicketingApp.Services.DTOs;
 
-public record CreateFAQCategoryDto(string Name, string Description);
+public class FAQCategoryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public ICollection<FAQItemDto> FAQItems { get; set; } = new List<FAQItemDto>();
+}
 
-public record UpdateFAQCategoryDto(string Name, string Description, bool IsActive);
+public class FAQItemDto
+{
+    public int Id { get; set; }
+    public int CategoryId { get; set; }
+    public string Question { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public int CreatedById { get; set; }
+    public string CreatedByName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public bool IsActive { get; set; }
+}
 
-public record CreateFAQItemDto(int CategoryId, string Question, string Answer);
+public class CreateFAQCategoryDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
 
-public record UpdateFAQItemDto(string Question, string Answer, bool IsActive);
+public class UpdateFAQCategoryDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
+
+public class CreateFAQItemDto
+{
+    public int CategoryId { get; set; }
+    public string Question { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+}
+
+public class UpdateFAQItemDto
+{
+    public string Question { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}

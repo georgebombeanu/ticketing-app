@@ -1,43 +1,66 @@
-// TicketingApp.Services/DTOs/DepartmentDtos.cs
 using System;
 using System.Collections.Generic;
 
 namespace TicketingApp.Services.DTOs;
 
-public record DepartmentDto(
-    int Id,
-    string Name,
-    string Description,
-    DateTime CreatedAt,
-    bool IsActive,
-    ICollection<TeamSummaryDto>? Teams
-);
+public class DepartmentDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public ICollection<TeamSummaryDto>? Teams { get; set; }
+}
 
-public record DepartmentSummaryDto(int Id, string Name, string Description, bool IsActive);
+public class DepartmentSummaryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
 
-public record CreateDepartmentDto(string Name, string Description);
+public class CreateDepartmentDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
 
-public record UpdateDepartmentDto(string Name, string Description, bool IsActive);
+public class UpdateDepartmentDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
 
 // Light version of TeamDto to avoid circular references
-public record TeamSummaryDto(int Id, string Name, string Description, bool IsActive);
+public class TeamSummaryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
 
-public record DepartmentDetailsDto(
-    int Id,
-    string Name,
-    string Description,
-    DateTime CreatedAt,
-    bool IsActive,
-    ICollection<TeamSummaryDto> Teams,
-    ICollection<UserSummaryDto> Users,
-    int ActiveTicketsCount
-);
+public class DepartmentDetailsDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
+    public ICollection<TeamSummaryDto> Teams { get; set; } = new List<TeamSummaryDto>();
+    public ICollection<UserSummaryDto> Users { get; set; } = new List<UserSummaryDto>();
+    public int ActiveTicketsCount { get; set; }
+}
 
 // Light version of UserDto to avoid circular references
-public record UserSummaryDto(
-    int Id,
-    string Email,
-    string FirstName,
-    string LastName,
-    bool IsActive
-);
+public class UserSummaryDto
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}

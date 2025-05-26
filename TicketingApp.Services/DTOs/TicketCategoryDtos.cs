@@ -1,5 +1,22 @@
-public record TicketCategoryDto(int Id, string Name, string Description, bool IsActive);
+namespace TicketingApp.Services.DTOs;
 
-public record CreateTicketCategoryDto(string Name, string Description);
+public class TicketCategoryDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
 
-public record UpdateTicketCategoryDto(string Name, string Description, bool IsActive);
+public class CreateTicketCategoryDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class UpdateTicketCategoryDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}

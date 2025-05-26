@@ -1,5 +1,20 @@
-public record TicketPriorityDto(int Id, string Name, string Description);
+namespace TicketingApp.Services.DTOs;
 
-public record CreateTicketPriorityDto(string Name, string Description);
+public class TicketPriorityDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
 
-public record UpdateTicketPriorityDto(string Name, string Description);
+public class CreateTicketPriorityDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class UpdateTicketPriorityDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
