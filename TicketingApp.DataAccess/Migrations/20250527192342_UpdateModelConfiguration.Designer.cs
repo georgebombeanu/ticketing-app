@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TicketingApp.DataAccess.Context;
@@ -11,9 +12,11 @@ using TicketingApp.DataAccess.Context;
 namespace TicketingApp.DataAccess.Migrations
 {
     [DbContext(typeof(TicketingContext))]
-    partial class TicketingContextModelSnapshot : ModelSnapshot
+    [Migration("20250527192342_UpdateModelConfiguration")]
+    partial class UpdateModelConfiguration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
