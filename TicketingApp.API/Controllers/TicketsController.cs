@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using TicketingApp.Services.Common.Exceptions;
 using TicketingApp.Services.DTOs;
 using TicketingApp.Services.Interfaces;
+using TicketingApp.Services.Common.Security;
 
 namespace TicketingApp.API.Controllers;
 
@@ -12,10 +13,12 @@ public class TicketsController : ControllerBase
 {
     private readonly ITicketService _ticketService;
     private readonly ILogger<TicketsController> _logger;
+    private readonly IUserContextService _userContext;
 
-    public TicketsController(ITicketService ticketService, ILogger<TicketsController> logger)
+    public TicketsController(ITicketService ticketService, IUserContextService userContext, ILogger<TicketsController> logger)
     {
         _ticketService = ticketService;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -89,10 +92,11 @@ public class TicketsController : ControllerBase
                 createTicketDto.Title, createTicketDto.CategoryId, createTicketDto.PriorityId,
                 createTicketDto.DepartmentId, createTicketDto.TeamId, createTicketDto.AssignedToId);
 
-            // TODO: Get user ID from JWT claims when authentication is implemented
-            var userId = 1; // Placeholder
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
 
-            var ticket = await _ticketService.CreateAsync(createTicketDto, userId);
+            var ticket = await _ticketService.CreateAsync(createTicketDto, userId.Value);
 
             _logger.LogInformation("API: Successfully created ticket {TicketId} ('{Title}') - Status: {Status}, Priority: {Priority}, Department: {Department}, Team: {Team}, Created by user: {UserId}",
                 ticket.Id, ticket.Title, ticket.StatusName, ticket.PriorityName,
@@ -113,8 +117,10 @@ public class TicketsController : ControllerBase
         }
         catch (Exception ex)
         {
+            var userId = _userContext.GetCurrentUserId();
+
             _logger.LogError(ex, "API: Error creating ticket '{Title}' for user {UserId}",
-                createTicketDto.Title, 1); // TODO: Get actual user ID
+                createTicketDto.Title, userId.Value);
             return StatusCode(500, new
             {
                 message = "An error occurred while creating the ticket",
@@ -133,10 +139,11 @@ public class TicketsController : ControllerBase
                 id, updateTicketDto.Title, updateTicketDto.CategoryId, updateTicketDto.PriorityId,
                 updateTicketDto.StatusId, updateTicketDto.AssignedToId, updateTicketDto.TeamId);
 
-            // TODO: Get user ID from JWT claims when authentication is implemented
-            var userId = 1; // Placeholder
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
 
-            var ticket = await _ticketService.UpdateAsync(id, updateTicketDto, userId);
+            var ticket = await _ticketService.UpdateAsync(id, updateTicketDto, userId.Value);
 
             _logger.LogInformation("API: Successfully updated ticket {TicketId} ('{Title}') - Status: {Status}, Priority: {Priority}, Assigned to: {AssignedTo}, Updated by user: {UserId}",
                 ticket.Id, ticket.Title, ticket.StatusName, ticket.PriorityName,
@@ -461,10 +468,11 @@ public class TicketsController : ControllerBase
             _logger.LogInformation("API: Adding attachment '{FileName}' to ticket {TicketId}",
                 attachmentDto.FileName, id);
 
-            // TODO: Get user ID from JWT claims when authentication is implemented
-            var userId = 1; // Placeholder
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
 
-            var attachment = await _ticketService.AddAttachmentAsync(attachmentDto, userId);
+            var attachment = await _ticketService.AddAttachmentAsync(attachmentDto, userId.Value);
 
             _logger.LogInformation("API: Successfully added attachment {AttachmentId} ('{FileName}') to ticket {TicketId} by user {UserId}",
                 attachment.Id, attachment.FileName, id, userId);
@@ -529,10 +537,11 @@ public class TicketsController : ControllerBase
         {
             _logger.LogInformation("API: Removing attachment {AttachmentId}", attachmentId);
 
-            // TODO: Get user ID from JWT claims when authentication is implemented
-            var userId = 1; // Placeholder
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
 
-            await _ticketService.RemoveAttachmentAsync(attachmentId, userId);
+            await _ticketService.RemoveAttachmentAsync(attachmentId, userId.Value);
 
             _logger.LogInformation("API: Successfully removed attachment {AttachmentId} by user {UserId}",
                 attachmentId, userId);

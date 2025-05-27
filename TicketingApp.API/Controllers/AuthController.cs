@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TicketingApp.Services.Common.Exceptions;
 using TicketingApp.Services.DTOs;
 using TicketingApp.Services.Interfaces;
+using TicketingApp.Services.Common.Security;
 
 namespace TicketingApp.API.Controllers;
 
@@ -11,11 +12,13 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IUserContextService _userContext;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IUserContextService userContext, ILogger<AuthController> logger)
     {
         _authService = authService;
         _logger = logger;
+        _userContext = userContext;
     }
 
     [HttpPost("login")]
@@ -58,12 +61,13 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // TODO: Get userId from JWT claims when authentication is implemented
-            var userId = 1; // Placeholder
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
 
             _logger.LogInformation("API: Password change attempt for user {UserId}", userId);
 
-            var result = await _authService.ChangePasswordAsync(userId, changePasswordRequest);
+            var result = await _authService.ChangePasswordAsync(userId.Value, changePasswordRequest);
 
             _logger.LogInformation("API: Password change successful for user {UserId}", userId);
             return Ok(new { message = "Password changed successfully" });

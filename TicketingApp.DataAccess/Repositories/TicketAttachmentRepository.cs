@@ -8,12 +8,9 @@ using TicketingApp.Models.Entities;
 
 namespace TicketingApp.DataAccess.Repositories
 {
-    public class TicketAttachmentRepository
-        : Repository<TicketAttachment>,
-            ITicketAttachmentRepository
+    public class TicketAttachmentRepository : Repository<TicketAttachment>, ITicketAttachmentRepository
     {
-        public TicketAttachmentRepository(TicketingContext context)
-            : base(context) { }
+        public TicketAttachmentRepository(TicketingContext context) : base(context) { }
 
         public async Task<IEnumerable<TicketAttachment>> GetAttachmentsByTicketAsync(int ticketId)
         {
