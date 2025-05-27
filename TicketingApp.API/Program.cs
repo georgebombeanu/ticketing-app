@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using TicketingApp.DataAccess;
 using TicketingApp.DataAccess.Context;
@@ -8,7 +7,6 @@ using TicketingApp.Services.Interfaces;
 using TicketingApp.Services.Implementations;
 using TicketingApp.API.Middleware;
 using TicketingApp.API.Filters;
-using TicketingApp.Services.Common.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +50,7 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<ITicketCategoryService, TicketCategoryService>();
 builder.Services.AddScoped<ITicketPriorityService, TicketPriorityService>();
 builder.Services.AddScoped<ITicketStatusService, TicketStatusService>();
+builder.Services.AddScoped<IFAQService, FAQService>();
 
 // Register AutoMapper with all profiles
 builder.Services.AddAutoMapper(cfg =>
@@ -66,6 +65,7 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddProfile<TicketCategoryMappingProfile>();
     cfg.AddProfile<TicketPriorityMappingProfile>();
     cfg.AddProfile<TicketStatusMappingProfile>();
+    cfg.AddProfile<FAQMappingProfile>();
 });
 
 // Add CORS

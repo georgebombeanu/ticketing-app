@@ -17,7 +17,8 @@ namespace TicketingApp.DataAccess
         ITicketCommentRepository TicketComments { get; }
         ITicketAttachmentRepository TicketAttachments { get; }
         ITicketFeedbackRepository TicketFeedback { get; }
-        IFAQRepository FAQs { get; }
+        IFAQCategoryRepository FAQCategories { get; }
+        IFAQItemRepository FAQItems { get; }
 
         Task<int> CompleteAsync();
     }

@@ -9,7 +9,7 @@ namespace TicketingApp.DataAccess
     public class UnitOfWork : IUnitOfWork
     {
         private readonly TicketingContext _context;
-        
+
         private IUserRepository? _users;
         private IRoleRepository? _roles;
         private IDepartmentRepository? _departments;
@@ -21,7 +21,8 @@ namespace TicketingApp.DataAccess
         private ITicketCommentRepository? _ticketComments;
         private ITicketAttachmentRepository? _ticketAttachments;
         private ITicketFeedbackRepository? _ticketFeedback;
-        private IFAQRepository? _faqs;
+        private IFAQCategoryRepository? _faqCategories;
+        private IFAQItemRepository? _faqItems;
 
         public UnitOfWork(TicketingContext context)
         {
@@ -39,7 +40,8 @@ namespace TicketingApp.DataAccess
         public ITicketCommentRepository TicketComments => _ticketComments ??= new TicketCommentRepository(_context);
         public ITicketAttachmentRepository TicketAttachments => _ticketAttachments ??= new TicketAttachmentRepository(_context);
         public ITicketFeedbackRepository TicketFeedback => _ticketFeedback ??= new TicketFeedbackRepository(_context);
-        public IFAQRepository FAQs => _faqs ??= new FAQRepository(_context);
+        public IFAQCategoryRepository FAQCategories => _faqCategories ??= new FAQCategoryRepository(_context);
+        public IFAQItemRepository FAQItems => _faqItems ??= new FAQItemRepository(_context);
 
         public async Task<int> CompleteAsync()
         {

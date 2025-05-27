@@ -30,7 +30,98 @@ namespace TicketingApp.DataAccess.Context
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Existing configurations...
+            modelBuilder.Entity<User>(entity =>
+    {
+        entity.ToTable("Users");
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+        entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+        entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+        entity.Property(e => e.PasswordHash).IsRequired();
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+        // Add unique index on email
+        entity.HasIndex(e => e.Email).IsUnique();
+    });
+
+            // Role entity configuration
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.ToTable("Roles");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Description).HasMaxLength(500);
+
+                // Add unique index on role name
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Department entity configuration
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.ToTable("Departments");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+                // Add unique index on department name
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Team entity configuration
+            modelBuilder.Entity<Team>(entity =>
+            {
+                entity.ToTable("Teams");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+                // Configure relationship to Department
+                entity.HasOne(e => e.Department)
+                      .WithMany(d => d.Teams)
+                      .HasForeignKey(e => e.DepartmentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Add composite unique index on name + department
+                entity.HasIndex(e => new { e.Name, e.DepartmentId }).IsUnique();
+            });
+
+            // UserRole entity configuration
+            modelBuilder.Entity<UserRole>(entity =>
+            {
+                entity.ToTable("UserRoles");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.AssignedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                // Configure relationships
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.UserRoles)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Role)
+                      .WithMany(r => r.UserRoles)
+                      .HasForeignKey(e => e.RoleId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Department)
+                      .WithMany(d => d.UserRoles)
+                      .HasForeignKey(e => e.DepartmentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Team)
+                      .WithMany(t => t.UserRoles)
+                      .HasForeignKey(e => e.TeamId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // Add composite index for performance
+                entity.HasIndex(e => new { e.UserId, e.RoleId, e.DepartmentId, e.TeamId });
+            });
 
             modelBuilder.Entity<TicketCategory>(entity =>
             {

@@ -4,13 +4,10 @@ using TicketingApp.Models.Entities;
 
 namespace TicketingApp.DataAccess.Repositories.Interfaces
 {
-    public interface IFAQRepository : IRepository<FAQItem>
+    public interface IFAQCategoryRepository : IRepository<FAQCategory>
     {
-        Task<IEnumerable<FAQCategory>> GetAllCategoriesAsync();
         Task<FAQCategory> GetCategoryWithItemsAsync(int categoryId);
-        Task<IEnumerable<FAQItem>> GetFAQsByCategory(int categoryId);
-        Task<IEnumerable<FAQItem>> GetActiveFAQsAsync();
-        Task<IEnumerable<FAQItem>> SearchFAQsAsync(string searchTerm);
+        Task<IEnumerable<FAQCategory>> GetActiveCategoriesAsync();
         Task<bool> IsCategoryNameUniqueAsync(string name, int? excludeCategoryId = null);
     }
 }
