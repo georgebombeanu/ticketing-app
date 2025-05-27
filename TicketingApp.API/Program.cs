@@ -7,19 +7,29 @@ using TicketingApp.Services.Common.Security;
 using TicketingApp.Services.Interfaces;
 using TicketingApp.Services.Implementations;
 using TicketingApp.API.Middleware;
+using TicketingApp.API.Filters;
+using TicketingApp.Services.Common.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure logging
+// Configure logging first
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Add global logging filter
+    options.Filters.Add<LoggingActionFilter>();
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register the logging action filter
+builder.Services.AddScoped<LoggingActionFilter>();
 
 // Add DbContext
 builder.Services.AddDbContext<TicketingContext>(options =>
@@ -72,7 +82,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseMiddleware<GlobalExceptionMiddleware>();
+// Use the enhanced exception middleware instead of the basic one
+app.UseMiddleware<SimpleGlobalExceptionMiddleware>();
 
 // Seed the database
 using (var scope = app.Services.CreateScope())

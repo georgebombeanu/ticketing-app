@@ -4,15 +4,20 @@ using TicketingApp.Services.Common.Exceptions;
 
 namespace TicketingApp.API.Middleware;
 
-public class GlobalExceptionMiddleware
+public class SimpleGlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<GlobalExceptionMiddleware> _logger;
+    private readonly ILogger<SimpleGlobalExceptionMiddleware> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+    public SimpleGlobalExceptionMiddleware(
+        RequestDelegate next,
+        ILogger<SimpleGlobalExceptionMiddleware> logger,
+        IWebHostEnvironment environment)
     {
         _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -23,18 +28,26 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred during request {Method} {Path}", 
-                context.Request.Method, context.Request.Path);
-            
             await HandleExceptionAsync(context, ex);
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        var correlationId = Guid.NewGuid().ToString();
+
+        // Log with correlation ID
+        _logger.LogError(exception,
+            "Unhandled exception occurred. CorrelationId: {CorrelationId}, Path: {Path}, Method: {Method}",
+            correlationId, context.Request.Path, context.Request.Method);
+
         context.Response.ContentType = "application/json";
 
-        var response = new ErrorResponse();
+        var response = new SimpleErrorResponse
+        {
+            CorrelationId = correlationId,
+            Timestamp = DateTime.UtcNow
+        };
 
         switch (exception)
         {
@@ -60,7 +73,11 @@ public class GlobalExceptionMiddleware
                 response.Message = "An internal server error occurred";
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Details = exception.Message; // Include details in development
+
+                if (_environment.IsDevelopment())
+                {
+                    response.Details = exception.ToString();
+                }
                 break;
         }
 
@@ -73,10 +90,11 @@ public class GlobalExceptionMiddleware
     }
 }
 
-public class ErrorResponse
+public class SimpleErrorResponse
 {
     public string Message { get; set; } = string.Empty;
     public int StatusCode { get; set; }
     public string? Details { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public string CorrelationId { get; set; } = string.Empty;
 }
