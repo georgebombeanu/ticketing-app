@@ -10,10 +10,12 @@ namespace TicketingApp.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("login")]
@@ -21,15 +23,32 @@ public class AuthController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("API: Login attempt for email: {Email}", loginRequest.Email);
+
             var response = await _authService.LoginAsync(loginRequest);
+
+            _logger.LogInformation("API: Login successful for user {UserId} ({Email}) with {RoleCount} roles",
+                response.User.Id, response.User.Email, response.User.UserRoles.Count);
+
+            // Don't log the actual token for security
             return Ok(response);
         }
         catch (AuthenticationException ex)
         {
+            _logger.LogWarning("API: Login failed for email {Email} - {Message}",
+                loginRequest.Email, ex.Message);
             return Unauthorized(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Login validation error for email {Email} - {Message}",
+                loginRequest.Email, ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "API: Unexpected error during login for email: {Email}",
+                loginRequest.Email);
             return StatusCode(500, new { message = "An error occurred during login" });
         }
     }
@@ -39,24 +58,29 @@ public class AuthController : ControllerBase
     {
         try
         {
-            // For now, we'll extract userId from somewhere (later from JWT claims)
-            // This is a placeholder - you'll need to get the user ID from the authenticated user
-            var userId = 1; // TODO: Get from JWT claims when authentication is implemented
-            
+            // TODO: Get userId from JWT claims when authentication is implemented
+            var userId = 1; // Placeholder
+
+            _logger.LogInformation("API: Password change attempt for user {UserId}", userId);
+
             var result = await _authService.ChangePasswordAsync(userId, changePasswordRequest);
-            
+
+            _logger.LogInformation("API: Password change successful for user {UserId}", userId);
             return Ok(new { message = "Password changed successfully" });
         }
         catch (NotFoundException ex)
         {
+            _logger.LogWarning("API: Password change failed - user not found: {Message}", ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (ValidationException ex)
         {
+            _logger.LogWarning("API: Password change validation error: {Message}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "API: Unexpected error during password change");
             return StatusCode(500, new { message = "An error occurred while changing password" });
         }
     }

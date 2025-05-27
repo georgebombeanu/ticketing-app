@@ -26,14 +26,20 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting all tickets");
+            _logger.LogInformation("API: Getting all tickets with full details");
+
             var tickets = await _ticketService.GetAllAsync();
-            _logger.LogInformation("API response: Successfully retrieved {Count} tickets", tickets.Count());
+
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets - Status breakdown: {@StatusBreakdown}",
+                tickets.Count(), statusBreakdown);
             return Ok(tickets);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve tickets");
+            _logger.LogError(ex, "API: Error retrieving all tickets");
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving tickets",
@@ -48,19 +54,23 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting ticket {TicketId}", id);
+            _logger.LogInformation("API: Getting ticket {TicketId} with full details", id);
+
             var ticket = await _ticketService.GetByIdAsync(id);
-            _logger.LogInformation("API response: Successfully retrieved ticket {TicketId}", id);
+
+            _logger.LogInformation("API: Successfully retrieved ticket {TicketId} ('{Title}') - Status: {Status}, Priority: {Priority}, Assigned to: {AssignedTo}, Comments: {CommentCount}, Attachments: {AttachmentCount}",
+                ticket.Id, ticket.Title, ticket.StatusName, ticket.PriorityName,
+                ticket.AssignedToName ?? "Unassigned", ticket.Comments.Count, ticket.Attachments.Count);
             return Ok(ticket);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API warning: Ticket not found {TicketId}: {Message}", id, ex.Message);
+            _logger.LogWarning("API: Ticket not found {TicketId} - {Message}", id, ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve ticket {TicketId}", id);
+            _logger.LogError(ex, "API: Error retrieving ticket {TicketId}", id);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving the ticket",
@@ -75,31 +85,36 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Creating ticket {@CreateTicketDto}", createTicketDto);
+            _logger.LogInformation("API: Creating new ticket '{Title}' - Category: {CategoryId}, Priority: {PriorityId}, Department: {DepartmentId}, Team: {TeamId}, Assigned to: {AssignedToId}",
+                createTicketDto.Title, createTicketDto.CategoryId, createTicketDto.PriorityId,
+                createTicketDto.DepartmentId, createTicketDto.TeamId, createTicketDto.AssignedToId);
 
             // TODO: Get user ID from JWT claims when authentication is implemented
             var userId = 1; // Placeholder
 
             var ticket = await _ticketService.CreateAsync(createTicketDto, userId);
 
-            _logger.LogInformation("API response: Successfully created ticket {TicketId}", ticket.Id);
+            _logger.LogInformation("API: Successfully created ticket {TicketId} ('{Title}') - Status: {Status}, Priority: {Priority}, Department: {Department}, Team: {Team}, Created by user: {UserId}",
+                ticket.Id, ticket.Title, ticket.StatusName, ticket.PriorityName,
+                ticket.DepartmentName, ticket.TeamName ?? "None", userId);
             return CreatedAtAction(nameof(GetTicket), new { id = ticket.Id }, ticket);
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning("API validation error: Failed to create ticket - {Message}. Data: {@CreateTicketDto}",
-                ex.Message, createTicketDto);
+            _logger.LogWarning("API: Ticket creation validation error for '{Title}' - {Message}",
+                createTicketDto.Title, ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API not found error: Failed to create ticket - {Message}. Data: {@CreateTicketDto}",
-                ex.Message, createTicketDto);
+            _logger.LogWarning("API: Ticket creation reference error for '{Title}' - {Message}",
+                createTicketDto.Title, ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to create ticket. Data: {@CreateTicketDto}", createTicketDto);
+            _logger.LogError(ex, "API: Error creating ticket '{Title}' for user {UserId}",
+                createTicketDto.Title, 1); // TODO: Get actual user ID
             return StatusCode(500, new
             {
                 message = "An error occurred while creating the ticket",
@@ -114,29 +129,33 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Updating ticket {TicketId} with {@UpdateTicketDto}", id, updateTicketDto);
+            _logger.LogInformation("API: Updating ticket {TicketId} - Title: '{Title}', Category: {CategoryId}, Priority: {PriorityId}, Status: {StatusId}, Assigned to: {AssignedToId}, Team: {TeamId}",
+                id, updateTicketDto.Title, updateTicketDto.CategoryId, updateTicketDto.PriorityId,
+                updateTicketDto.StatusId, updateTicketDto.AssignedToId, updateTicketDto.TeamId);
 
             // TODO: Get user ID from JWT claims when authentication is implemented
             var userId = 1; // Placeholder
 
             var ticket = await _ticketService.UpdateAsync(id, updateTicketDto, userId);
 
-            _logger.LogInformation("API response: Successfully updated ticket {TicketId}", id);
+            _logger.LogInformation("API: Successfully updated ticket {TicketId} ('{Title}') - Status: {Status}, Priority: {Priority}, Assigned to: {AssignedTo}, Updated by user: {UserId}",
+                ticket.Id, ticket.Title, ticket.StatusName, ticket.PriorityName,
+                ticket.AssignedToName ?? "Unassigned", userId);
             return Ok(ticket);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API not found error: Failed to update ticket {TicketId} - {Message}", id, ex.Message);
+            _logger.LogWarning("API: Ticket not found for update {TicketId} - {Message}", id, ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (ValidationException ex)
         {
-            _logger.LogWarning("API validation error: Failed to update ticket {TicketId} - {Message}", id, ex.Message);
+            _logger.LogWarning("API: Ticket update validation error for {TicketId} - {Message}", id, ex.Message);
             return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to update ticket {TicketId}", id);
+            _logger.LogError(ex, "API: Error updating ticket {TicketId}", id);
             return StatusCode(500, new
             {
                 message = "An error occurred while updating the ticket",
@@ -151,19 +170,21 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Deleting ticket {TicketId}", id);
+            _logger.LogInformation("API: Deleting ticket {TicketId}", id);
+
             await _ticketService.DeleteAsync(id);
-            _logger.LogInformation("API response: Successfully deleted ticket {TicketId}", id);
+
+            _logger.LogInformation("API: Successfully deleted ticket {TicketId}", id);
             return Ok(new { message = "Ticket deleted successfully" });
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API not found error: Failed to delete ticket {TicketId} - {Message}", id, ex.Message);
+            _logger.LogWarning("API: Ticket not found for deletion {TicketId} - {Message}", id, ex.Message);
             return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to delete ticket {TicketId}", id);
+            _logger.LogError(ex, "API: Error deleting ticket {TicketId}", id);
             return StatusCode(500, new
             {
                 message = "An error occurred while deleting the ticket",
@@ -175,21 +196,23 @@ public class TicketsController : ControllerBase
 
     #endregion
 
-    #region Analytics
+    #region Analytics and Reporting
 
     [HttpGet("analytics/active-count")]
     public async Task<ActionResult<int>> GetActiveTicketsCount()
     {
         try
         {
-            _logger.LogInformation("API request: Getting active tickets count");
+            _logger.LogInformation("API: Getting active tickets count");
+
             var count = await _ticketService.GetActiveTicketsCountAsync();
-            _logger.LogInformation("API response: Active tickets count is {Count}", count);
+
+            _logger.LogInformation("API: Successfully retrieved active tickets count: {ActiveTicketCount}", count);
             return Ok(new { count });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve active tickets count");
+            _logger.LogError(ex, "API: Error retrieving active tickets count");
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving ticket count",
@@ -204,14 +227,17 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting tickets count for status {StatusId}", statusId);
+            _logger.LogInformation("API: Getting tickets count for status {StatusId}", statusId);
+
             var count = await _ticketService.GetTicketsCountByStatusAsync(statusId);
-            _logger.LogInformation("API response: Tickets count for status {StatusId} is {Count}", statusId, count);
+
+            _logger.LogInformation("API: Successfully retrieved tickets count for status {StatusId}: {TicketCount} tickets",
+                statusId, count);
             return Ok(new { statusId, count });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve tickets count for status {StatusId}", statusId);
+            _logger.LogError(ex, "API: Error retrieving tickets count for status {StatusId}", statusId);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving tickets count by status",
@@ -226,14 +252,17 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting tickets count for user {UserId}", userId);
+            _logger.LogInformation("API: Getting tickets count for user {UserId}", userId);
+
             var count = await _ticketService.GetTicketsCountByUserAsync(userId);
-            _logger.LogInformation("API response: Tickets count for user {UserId} is {Count}", userId, count);
+
+            _logger.LogInformation("API: Successfully retrieved tickets count for user {UserId}: {TicketCount} tickets created",
+                userId, count);
             return Ok(new { userId, count });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve tickets count for user {UserId}", userId);
+            _logger.LogError(ex, "API: Error retrieving tickets count for user {UserId}", userId);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving tickets count by user",
@@ -248,15 +277,17 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting tickets count for department {DepartmentId}", departmentId);
+            _logger.LogInformation("API: Getting tickets count for department {DepartmentId}", departmentId);
+
             var count = await _ticketService.GetTicketsCountByDepartmentAsync(departmentId);
-            _logger.LogInformation("API response: Tickets count for department {DepartmentId} is {Count}",
+
+            _logger.LogInformation("API: Successfully retrieved tickets count for department {DepartmentId}: {TicketCount} tickets",
                 departmentId, count);
             return Ok(new { departmentId, count });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve tickets count for department {DepartmentId}", departmentId);
+            _logger.LogError(ex, "API: Error retrieving tickets count for department {DepartmentId}", departmentId);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving tickets count by department",
@@ -273,22 +304,145 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting tickets created between {StartDate} and {EndDate}",
+            _logger.LogInformation("API: Getting tickets created between {StartDate:yyyy-MM-dd} and {EndDate:yyyy-MM-dd}",
                 startDate, endDate);
 
             var tickets = await _ticketService.GetTicketsCreatedBetweenDatesAsync(startDate, endDate);
 
-            _logger.LogInformation("API response: Successfully retrieved {Count} tickets between {StartDate} and {EndDate}",
-                tickets.Count(), startDate, endDate);
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+            var priorityBreakdown = tickets.GroupBy(t => t.PriorityName)
+                                          .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets between {StartDate:yyyy-MM-dd} and {EndDate:yyyy-MM-dd} - Status breakdown: {@StatusBreakdown}, Priority breakdown: {@PriorityBreakdown}",
+                tickets.Count(), startDate, endDate, statusBreakdown, priorityBreakdown);
             return Ok(tickets);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve tickets between {StartDate} and {EndDate}",
+            _logger.LogError(ex, "API: Error retrieving tickets between {StartDate:yyyy-MM-dd} and {EndDate:yyyy-MM-dd}",
                 startDate, endDate);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving tickets by date range",
+                error = ex.Message,
+                type = ex.GetType().Name
+            });
+        }
+    }
+
+    [HttpGet("user/{userId}")]
+    public async Task<ActionResult<IEnumerable<TicketDto>>> GetTicketsByUser(int userId)
+    {
+        try
+        {
+            _logger.LogInformation("API: Getting tickets created by user {UserId}", userId);
+
+            var tickets = await _ticketService.GetTicketsByUserAsync(userId);
+
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets created by user {UserId} - Status breakdown: {@StatusBreakdown}",
+                tickets.Count(), userId, statusBreakdown);
+            return Ok(tickets);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error retrieving tickets for user {UserId}", userId);
+            return StatusCode(500, new
+            {
+                message = "An error occurred while retrieving user tickets",
+                error = ex.Message,
+                type = ex.GetType().Name
+            });
+        }
+    }
+
+    [HttpGet("assigned/{userId}")]
+    public async Task<ActionResult<IEnumerable<TicketDto>>> GetTicketsAssignedToUser(int userId)
+    {
+        try
+        {
+            _logger.LogInformation("API: Getting tickets assigned to user {UserId}", userId);
+
+            var tickets = await _ticketService.GetTicketsAssignedToUserAsync(userId);
+
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+            var priorityBreakdown = tickets.GroupBy(t => t.PriorityName)
+                                          .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets assigned to user {UserId} - Status breakdown: {@StatusBreakdown}, Priority breakdown: {@PriorityBreakdown}",
+                tickets.Count(), userId, statusBreakdown, priorityBreakdown);
+            return Ok(tickets);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error retrieving tickets assigned to user {UserId}", userId);
+            return StatusCode(500, new
+            {
+                message = "An error occurred while retrieving assigned tickets",
+                error = ex.Message,
+                type = ex.GetType().Name
+            });
+        }
+    }
+
+    [HttpGet("department/{departmentId}")]
+    public async Task<ActionResult<IEnumerable<TicketDto>>> GetTicketsByDepartment(int departmentId)
+    {
+        try
+        {
+            _logger.LogInformation("API: Getting tickets for department {DepartmentId}", departmentId);
+
+            var tickets = await _ticketService.GetTicketsByDepartmentAsync(departmentId);
+
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+            var teamBreakdown = tickets.GroupBy(t => t.TeamName ?? "No Team")
+                                      .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets for department {DepartmentId} - Status breakdown: {@StatusBreakdown}, Team breakdown: {@TeamBreakdown}",
+                tickets.Count(), departmentId, statusBreakdown, teamBreakdown);
+            return Ok(tickets);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error retrieving tickets for department {DepartmentId}", departmentId);
+            return StatusCode(500, new
+            {
+                message = "An error occurred while retrieving department tickets",
+                error = ex.Message,
+                type = ex.GetType().Name
+            });
+        }
+    }
+
+    [HttpGet("team/{teamId}")]
+    public async Task<ActionResult<IEnumerable<TicketDto>>> GetTicketsByTeam(int teamId)
+    {
+        try
+        {
+            _logger.LogInformation("API: Getting tickets for team {TeamId}", teamId);
+
+            var tickets = await _ticketService.GetTicketsByTeamAsync(teamId);
+
+            var statusBreakdown = tickets.GroupBy(t => t.StatusName)
+                                        .ToDictionary(g => g.Key, g => g.Count());
+            var assignmentBreakdown = tickets.GroupBy(t => t.AssignedToName ?? "Unassigned")
+                                            .ToDictionary(g => g.Key, g => g.Count());
+
+            _logger.LogInformation("API: Successfully retrieved {TicketCount} tickets for team {TeamId} - Status breakdown: {@StatusBreakdown}, Assignment breakdown: {@AssignmentBreakdown}",
+                tickets.Count(), teamId, statusBreakdown, assignmentBreakdown);
+            return Ok(tickets);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error retrieving tickets for team {TeamId}", teamId);
+            return StatusCode(500, new
+            {
+                message = "An error occurred while retrieving team tickets",
                 error = ex.Message,
                 type = ex.GetType().Name
             });
@@ -304,27 +458,32 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Adding attachment to ticket {TicketId}", id);
-            _logger.LogDebug("Attachment data: {@AttachmentDto}", attachmentDto);
+            _logger.LogInformation("API: Adding attachment '{FileName}' to ticket {TicketId}",
+                attachmentDto.FileName, id);
 
             // TODO: Get user ID from JWT claims when authentication is implemented
             var userId = 1; // Placeholder
 
             var attachment = await _ticketService.AddAttachmentAsync(attachmentDto, userId);
 
-            _logger.LogInformation("API response: Successfully added attachment {AttachmentId} to ticket {TicketId}",
-                attachment.Id, id);
+            _logger.LogInformation("API: Successfully added attachment {AttachmentId} ('{FileName}') to ticket {TicketId} by user {UserId}",
+                attachment.Id, attachment.FileName, id, userId);
             return CreatedAtAction(nameof(GetTicket), new { id }, attachment);
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API not found error: Failed to add attachment to ticket {TicketId} - {Message}",
-                id, ex.Message);
+            _logger.LogWarning("API: Failed to add attachment to ticket {TicketId} - {Message}", id, ex.Message);
             return NotFound(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Attachment validation error for ticket {TicketId} - {Message}", id, ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to add attachment to ticket {TicketId}", id);
+            _logger.LogError(ex, "API: Error adding attachment '{FileName}' to ticket {TicketId}",
+                attachmentDto.FileName, id);
             return StatusCode(500, new
             {
                 message = "An error occurred while adding the attachment",
@@ -339,17 +498,21 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Getting attachments for ticket {TicketId}", id);
+            _logger.LogInformation("API: Getting attachments for ticket {TicketId}", id);
 
             var attachments = await _ticketService.GetTicketAttachmentsAsync(id);
 
-            _logger.LogInformation("API response: Successfully retrieved {Count} attachments for ticket {TicketId}",
-                attachments.Count(), id);
+            var fileSizeInfo = attachments.Any() ?
+                $"Files: {string.Join(", ", attachments.Select(a => $"'{a.FileName}'"))}" :
+                "No files";
+
+            _logger.LogInformation("API: Successfully retrieved {AttachmentCount} attachments for ticket {TicketId} - {FileSizeInfo}",
+                attachments.Count(), id, fileSizeInfo);
             return Ok(attachments);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to retrieve attachments for ticket {TicketId}", id);
+            _logger.LogError(ex, "API: Error retrieving attachments for ticket {TicketId}", id);
             return StatusCode(500, new
             {
                 message = "An error occurred while retrieving attachments",
@@ -364,25 +527,32 @@ public class TicketsController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("API request: Removing attachment {AttachmentId}", attachmentId);
+            _logger.LogInformation("API: Removing attachment {AttachmentId}", attachmentId);
 
             // TODO: Get user ID from JWT claims when authentication is implemented
             var userId = 1; // Placeholder
 
             await _ticketService.RemoveAttachmentAsync(attachmentId, userId);
 
-            _logger.LogInformation("API response: Successfully removed attachment {AttachmentId}", attachmentId);
+            _logger.LogInformation("API: Successfully removed attachment {AttachmentId} by user {UserId}",
+                attachmentId, userId);
             return Ok(new { message = "Attachment removed successfully" });
         }
         catch (NotFoundException ex)
         {
-            _logger.LogWarning("API not found error: Failed to remove attachment {AttachmentId} - {Message}",
+            _logger.LogWarning("API: Attachment not found for removal {AttachmentId} - {Message}",
                 attachmentId, ex.Message);
             return NotFound(new { message = ex.Message });
         }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Attachment removal validation error {AttachmentId} - {Message}",
+                attachmentId, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "API error: Failed to remove attachment {AttachmentId}", attachmentId);
+            _logger.LogError(ex, "API: Error removing attachment {AttachmentId}", attachmentId);
             return StatusCode(500, new
             {
                 message = "An error occurred while removing the attachment",
