@@ -33,7 +33,8 @@ namespace TicketingApp.DataAccess.Repositories
         public async Task<TicketAttachment> GetAttachmentWithDetailsAsync(int attachmentId)
         {
             return await _context
-                .TicketAttachments.Include(ta => ta.User)
+                .TicketAttachments
+                .Include(ta => ta.User)
                 .Include(ta => ta.Ticket)
                 .FirstOrDefaultAsync(ta => ta.Id == attachmentId);
         }

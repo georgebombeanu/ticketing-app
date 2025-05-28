@@ -27,11 +27,12 @@ public class JwtTokenGenerator : IJwtTokenGenerator
     public string GenerateAccessToken(User user)
     {
         var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+    {
+        // Use ClaimTypes.NameIdentifier instead of JwtRegisteredClaimNames.Sub
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Email, user.Email),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+    };
 
         // Add role claims with department and team context
         foreach (var userRole in user.UserRoles)

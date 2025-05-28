@@ -18,8 +18,8 @@ public class TicketsController : ControllerBase
     public TicketsController(ITicketService ticketService, IUserContextService userContext, ILogger<TicketsController> logger)
     {
         _ticketService = ticketService;
-        _userContext = userContext;
         _logger = logger;
+        _userContext = userContext;
     }
 
     #region Basic CRUD Operations
@@ -453,6 +453,230 @@ public class TicketsController : ControllerBase
                 error = ex.Message,
                 type = ex.GetType().Name
             });
+        }
+    }
+
+    #endregion
+
+    #region Assignment Operations
+
+    [HttpPost("{id}/assign")]
+    public async Task<ActionResult<TicketDto>> AssignTicket(int id, [FromBody] AssignTicketRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("API: Assigning ticket {TicketId} to user {AssignedToUserId}",
+                id, request.AssignedToUserId);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var ticket = await _ticketService.AssignTicketAsync(id, request.AssignedToUserId, userId.Value);
+
+            _logger.LogInformation("API: Successfully assigned ticket {TicketId} to user {AssignedToUserId} by user {UserId}",
+                ticket.Id, request.AssignedToUserId, userId);
+            return Ok(ticket);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to assign ticket {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Ticket assignment validation error for {TicketId} - {Message}", id, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error assigning ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while assigning the ticket" });
+        }
+    }
+
+    [HttpPost("{id}/unassign")]
+    public async Task<ActionResult<TicketDto>> UnassignTicket(int id)
+    {
+        try
+        {
+            _logger.LogInformation("API: Unassigning ticket {TicketId}", id);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var ticket = await _ticketService.UnassignTicketAsync(id, userId.Value);
+
+            _logger.LogInformation("API: Successfully unassigned ticket {TicketId} by user {UserId}",
+                ticket.Id, userId);
+            return Ok(ticket);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to unassign ticket {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error unassigning ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while unassigning the ticket" });
+        }
+    }
+
+    [HttpPost("{id}/status")]
+    public async Task<ActionResult<TicketDto>> UpdateTicketStatus(int id, [FromBody] UpdateStatusRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("API: Updating status of ticket {TicketId} to status {StatusId}",
+                id, request.StatusId);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var ticket = await _ticketService.UpdateStatusAsync(id, request.StatusId, userId.Value);
+
+            _logger.LogInformation("API: Successfully updated status of ticket {TicketId} to {StatusName} by user {UserId}",
+                ticket.Id, ticket.StatusName, userId);
+            return Ok(ticket);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to update ticket status {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Ticket status update validation error for {TicketId} - {Message}", id, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error updating ticket status {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating ticket status" });
+        }
+    }
+
+    [HttpPost("{id}/close")]
+    public async Task<ActionResult<TicketDto>> CloseTicket(int id)
+    {
+        try
+        {
+            _logger.LogInformation("API: Closing ticket {TicketId}", id);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var ticket = await _ticketService.CloseTicketAsync(id, userId.Value);
+
+            _logger.LogInformation("API: Successfully closed ticket {TicketId} by user {UserId}",
+                ticket.Id, userId);
+            return Ok(ticket);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to close ticket {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error closing ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while closing the ticket" });
+        }
+    }
+
+    [HttpPost("{id}/reopen")]
+    public async Task<ActionResult<TicketDto>> ReopenTicket(int id)
+    {
+        try
+        {
+            _logger.LogInformation("API: Reopening ticket {TicketId}", id);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var ticket = await _ticketService.ReopenTicketAsync(id, userId.Value);
+
+            _logger.LogInformation("API: Successfully reopened ticket {TicketId} by user {UserId}",
+                ticket.Id, userId);
+            return Ok(ticket);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to reopen ticket {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error reopening ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while reopening the ticket" });
+        }
+    }
+
+    #endregion
+
+    #region Comments
+
+    [HttpPost("{id}/comments")]
+    public async Task<ActionResult<TicketCommentDto>> AddComment(int id, [FromBody] CreateTicketCommentDto commentDto)
+    {
+        try
+        {
+            _logger.LogInformation("API: Adding comment to ticket {TicketId} - Internal: {IsInternal}",
+                id, commentDto.IsInternal);
+
+            var userId = _userContext.GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized("User not authenticated");
+
+            var comment = await _ticketService.AddCommentAsync(id, commentDto, userId.Value);
+
+            _logger.LogInformation("API: Successfully added comment {CommentId} to ticket {TicketId} by user {UserId}",
+                comment.Id, id, userId);
+            return CreatedAtAction(nameof(GetTicket), new { id }, comment);
+        }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning("API: Failed to add comment to ticket {TicketId} - {Message}", id, ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("API: Comment validation error for ticket {TicketId} - {Message}", id, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error adding comment to ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while adding the comment" });
+        }
+    }
+
+    [HttpGet("{id}/comments")]
+    public async Task<ActionResult<IEnumerable<TicketCommentDto>>> GetTicketComments(int id, [FromQuery] bool includeInternal = false)
+    {
+        try
+        {
+            _logger.LogInformation("API: Getting comments for ticket {TicketId} - Include Internal: {IncludeInternal}",
+                id, includeInternal);
+
+            var comments = await _ticketService.GetTicketCommentsAsync(id, includeInternal);
+
+            var internalCount = comments.Count(c => c.IsInternal);
+            var publicCount = comments.Count() - internalCount;
+
+            _logger.LogInformation("API: Successfully retrieved {CommentCount} comments for ticket {TicketId} - Public: {PublicCount}, Internal: {InternalCount}",
+                comments.Count(), id, publicCount, internalCount);
+            return Ok(comments);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "API: Error retrieving comments for ticket {TicketId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving comments" });
         }
     }
 
