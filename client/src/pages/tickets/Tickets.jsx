@@ -76,12 +76,15 @@ const Tickets = () => {
     queryFn: () => ticketStatusesAPI.getAll().then(res => res.data),
   });
 
-  // Assign to me mutation
+  // Assign to me mutation with cache invalidation
   const assignToMeMutation = useMutation({
     mutationFn: (ticketId) => ticketsAPI.assign(ticketId, user.id),
     onSuccess: () => {
-      // Refresh tickets data
-      queryClient.invalidateQueries(['tickets']);
+      // Refresh all ticket-related data
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
       showSuccess('Ticket assigned to you successfully!');
     },
     onError: (error) => {

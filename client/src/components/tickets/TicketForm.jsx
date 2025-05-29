@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -36,20 +36,21 @@ import {
 import useAuthStore from '../../store/authStore';
 import { useToast } from '../../contexts/ToastContext';
 
-// Validation schema
+// Validation schema - Updated to handle string to number conversion
 const ticketSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
   description: z.string().min(1, 'Description is required').max(2000, 'Description must be less than 2000 characters'),
-  categoryId: z.number().min(1, 'Category is required'),
-  priorityId: z.number().min(1, 'Priority is required'),
-  departmentId: z.number().min(1, 'Department is required'),
-  statusId: z.number().optional(),
-  teamId: z.number().optional().nullable(),
-  assignedToId: z.number().optional().nullable(),
+  categoryId: z.union([z.string(), z.number()]).transform(val => parseInt(val)).refine(val => val > 0, 'Category is required'),
+  priorityId: z.union([z.string(), z.number()]).transform(val => parseInt(val)).refine(val => val > 0, 'Priority is required'),
+  departmentId: z.union([z.string(), z.number()]).transform(val => parseInt(val)).refine(val => val > 0, 'Department is required'),
+  statusId: z.union([z.string(), z.number()]).transform(val => val ? parseInt(val) : undefined).optional(),
+  teamId: z.union([z.string(), z.number()]).transform(val => val ? parseInt(val) : null).optional().nullable(),
+  assignedToId: z.union([z.string(), z.number()]).transform(val => val ? parseInt(val) : null).optional().nullable(),
 });
 
 const TicketForm = ({ ticket = null, isEdit = false }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // Add query client
   const { user } = useAuthStore();
   const { showSuccess, showError } = useToast();
   const [selectedDepartment, setSelectedDepartment] = useState(ticket?.departmentId || null);
@@ -106,8 +107,8 @@ const TicketForm = ({ ticket = null, isEdit = false }) => {
       priorityId: ticket?.priorityId || '',
       statusId: ticket?.statusId || '',
       departmentId: ticket?.departmentId || '',
-      teamId: ticket?.teamId || null,
-      assignedToId: ticket?.assignedToId || null,
+      teamId: ticket?.teamId || '',
+      assignedToId: ticket?.assignedToId || '',
     },
   });
 
@@ -115,29 +116,30 @@ const TicketForm = ({ ticket = null, isEdit = false }) => {
   const watchedTeam = watch('teamId');
 
   // Update selected department when form value changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (watchedDepartment && watchedDepartment !== selectedDepartment) {
-      setSelectedDepartment(watchedDepartment);
+      setSelectedDepartment(parseInt(watchedDepartment));
       if (!isEdit) { // Only reset on create, not edit
-        setValue('teamId', null);
-        setValue('assignedToId', null);
+        setValue('teamId', '');
+        setValue('assignedToId', '');
       }
-      setSelectedTeam(watchedTeam);
     }
-  }, [watchedDepartment, selectedDepartment, setValue, isEdit, watchedTeam]);
+  }, [watchedDepartment, selectedDepartment, setValue, isEdit]);
 
   // Update selected team when form value changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (watchedTeam !== selectedTeam) {
-      setSelectedTeam(watchedTeam);
+      setSelectedTeam(watchedTeam ? parseInt(watchedTeam) : null);
       if (!isEdit && watchedTeam !== ticket?.teamId) { // Only reset on create or when actually changing
-        setValue('assignedToId', null);
+        setValue('assignedToId', '');
       }
     }
   }, [watchedTeam, selectedTeam, setValue, isEdit, ticket?.teamId]);
 
   const mutation = useMutation({
     mutationFn: (data) => {
+      console.log('Submitting ticket data:', data); // Debug log
+      
       const cleanData = {
         ...data,
         teamId: data.teamId || undefined,
@@ -149,15 +151,30 @@ const TicketForm = ({ ticket = null, isEdit = false }) => {
         : ticketsAPI.create(cleanData);
     },
     onSuccess: (response) => {
+      console.log('Ticket operation successful:', response); // Debug log
+      
+      // Invalidate and refetch all ticket-related queries
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      
+      // If editing, also invalidate the specific ticket query
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ['ticket', ticket.id] });
+        queryClient.invalidateQueries({ queryKey: ['ticket-comments', ticket.id] });
+      }
+      
       showSuccess(isEdit ? 'Ticket updated successfully!' : 'Ticket created successfully!');
       navigate(`/tickets/${response.data.id}`);
     },
     onError: (error) => {
+      console.error('Ticket operation failed:', error); // Debug log
       showError(error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} ticket`);
     },
   });
 
   const onSubmit = (data) => {
+    console.log('Form submitted with data:', data); // Debug log
     mutation.mutate(data);
   };
 

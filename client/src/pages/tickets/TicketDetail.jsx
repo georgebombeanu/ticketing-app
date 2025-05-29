@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -58,17 +58,27 @@ const TicketDetail = () => {
   // Form for comments
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
-  // Fetch ticket data
-  const { data: ticket, isLoading, error } = useQuery({
+  // Force refetch when component mounts or ID changes
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+  }, [id, queryClient]);
+
+  // Fetch ticket data with proper cache management
+  const { data: ticket, isLoading, error, refetch } = useQuery({
     queryKey: ['ticket', id],
     queryFn: () => ticketsAPI.getById(id).then(res => res.data),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
-  const { data: comments } = useQuery({
+  const { data: comments, refetch: refetchComments } = useQuery({
     queryKey: ['ticket-comments', id],
     queryFn: () => ticketsAPI.getComments(id, true).then(res => res.data),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const { data: users } = useQuery({
@@ -82,11 +92,17 @@ const TicketDetail = () => {
     queryFn: () => ticketStatusesAPI.getAll().then(res => res.data),
   });
 
-  // Mutations
+  // Mutations with comprehensive cache invalidation
   const assignMutation = useMutation({
     mutationFn: (userId) => ticketsAPI.assign(id, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
+      setTimeout(() => refetch(), 100);
+      
       setAssignDialog(false);
       setSelectedUserId('');
     },
@@ -95,14 +111,25 @@ const TicketDetail = () => {
   const unassignMutation = useMutation({
     mutationFn: () => ticketsAPI.unassign(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
+      setTimeout(() => refetch(), 100);
     },
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: (statusId) => ticketsAPI.updateStatus(id, statusId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
+      setTimeout(() => refetch(), 100);
+      
       setStatusDialog(false);
       setSelectedStatusId('');
     },
@@ -111,7 +138,14 @@ const TicketDetail = () => {
   const addCommentMutation = useMutation({
     mutationFn: (data) => ticketsAPI.addComment(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket-comments', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket-comments', id] });
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      
+      setTimeout(() => {
+        refetch();
+        refetchComments();
+      }, 100);
+      
       reset();
     },
   });
@@ -119,14 +153,24 @@ const TicketDetail = () => {
   const closeMutation = useMutation({
     mutationFn: () => ticketsAPI.close(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
+      setTimeout(() => refetch(), 100);
     },
   });
 
   const reopenMutation = useMutation({
     mutationFn: () => ticketsAPI.reopen(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['ticket', id]);
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'assigned', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets', 'active-count'] });
+      
+      setTimeout(() => refetch(), 100);
     },
   });
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppThemeProvider } from './contexts/ThemeContext';
@@ -57,6 +56,7 @@ function App() {
                   <Route path="tickets" element={<Tickets />} />
                   <Route path="tickets/create" element={<CreateTicket />} />
                   <Route path="tickets/:id" element={<TicketDetail />} />
+                  <Route path="tickets/:id/edit" element={<EditTicket />} />
                   
                   {/* Users - Admin/Manager only */}
                   <Route 
