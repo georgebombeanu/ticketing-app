@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -44,6 +44,7 @@ const Tickets = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAgent } = useAuthStore();
+  const queryClient = useQueryClient();
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -54,7 +55,7 @@ const Tickets = () => {
 
   // Fetch data
   const { data: tickets, isLoading: ticketsLoading, error } = useQuery({
-    queryKey: ['tickets', 'all'],
+    queryKey: ['tickets'],
     queryFn: () => ticketsAPI.getAll().then(res => res.data),
   });
 
@@ -71,6 +72,18 @@ const Tickets = () => {
   const { data: statuses } = useQuery({
     queryKey: ['ticket-statuses'],
     queryFn: () => ticketStatusesAPI.getAll().then(res => res.data),
+  });
+
+  // Assign to me mutation
+  const assignToMeMutation = useMutation({
+    mutationFn: (ticketId) => ticketsAPI.assign(ticketId, user.id),
+    onSuccess: () => {
+      // Refresh tickets data
+      queryClient.invalidateQueries(['tickets']);
+    },
+    onError: (error) => {
+      console.error('Failed to assign ticket:', error);
+    },
   });
 
   // Filter tickets
@@ -371,8 +384,9 @@ const Tickets = () => {
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // TODO: Implement assign to me functionality
+                              assignToMeMutation.mutate(ticket.id);
                             }}
+                            disabled={assignToMeMutation.isPending}
                           >
                             <Assignment fontSize="small" />
                           </IconButton>

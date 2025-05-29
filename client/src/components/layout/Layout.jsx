@@ -82,20 +82,11 @@ const Layout = () => {
         path: '/dashboard',
       },
       {
-        text: 'My Tickets',
+        text: 'Tickets',
         icon: <ConfirmationNumber />,
         path: '/tickets',
       },
     ];
-
-    // Add management items for agents and above
-    if (isAgent()) {
-      items.push({
-        text: 'All Tickets',
-        icon: <ConfirmationNumber />,
-        path: '/tickets/all',
-      });
-    }
 
     // Add admin items for managers and above
     if (isManager()) {

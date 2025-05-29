@@ -1,3 +1,4 @@
+// src/pages/dashboard/Dashboard.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -43,7 +44,7 @@ const Dashboard = () => {
 
   // Fetch dashboard data
   const { data: allTickets, isLoading: allTicketsLoading, error: allTicketsError } = useQuery({
-    queryKey: ['tickets', 'all'],
+    queryKey: ['tickets'],
     queryFn: () => ticketsAPI.getAll().then(res => res.data),
   });
 
