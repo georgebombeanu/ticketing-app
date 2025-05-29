@@ -39,12 +39,14 @@ import { format } from 'date-fns';
 import { ticketsAPI, ticketCategoriesAPI, ticketPrioritiesAPI, ticketStatusesAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
+import { useToast } from '../../contexts/ToastContext';
 
 const Tickets = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAgent } = useAuthStore();
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -80,9 +82,11 @@ const Tickets = () => {
     onSuccess: () => {
       // Refresh tickets data
       queryClient.invalidateQueries(['tickets']);
+      showSuccess('Ticket assigned to you successfully!');
     },
     onError: (error) => {
       console.error('Failed to assign ticket:', error);
+      showError('Failed to assign ticket. Please try again.');
     },
   });
 

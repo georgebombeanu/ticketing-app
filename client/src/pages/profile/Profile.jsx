@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -29,6 +30,8 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import useAuthStore from '../../store/authStore';
+import { useToast } from '../../contexts/ToastContext';
+import { usersAPI, authAPI } from '../../services/api';
 
 // Validation schemas
 const profileSchema = z.object({
@@ -47,7 +50,8 @@ const passwordSchema = z.object({
 });
 
 const Profile = () => {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
+  const { showSuccess, showError } = useToast();
   const [editingProfile, setEditingProfile] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
@@ -69,17 +73,49 @@ const Profile = () => {
     },
   });
 
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: (data) => usersAPI.update(user.id, data),
+    onSuccess: (response) => {
+      setUser(response.data);
+      showSuccess('Profile updated successfully!');
+      setEditingProfile(false);
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Failed to update profile');
+    },
+  });
+
+  // Password change mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: (data) => authAPI.changePassword(data),
+    onSuccess: () => {
+      showSuccess('Password changed successfully!');
+      setChangingPassword(false);
+      passwordForm.reset();
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Failed to change password');
+    },
+  });
+
   const onProfileSubmit = (data) => {
-    // TODO: Implement profile update
-    console.log('Profile update:', data);
-    setEditingProfile(false);
+    // Prepare update data (only the fields that can be updated)
+    const updateData = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      isActive: user.isActive, // Keep current status
+      userRoles: user.userRoles, // Keep existing roles
+    };
+    updateProfileMutation.mutate(updateData);
   };
 
   const onPasswordSubmit = (data) => {
-    // TODO: Implement password change
-    console.log('Password change:', data);
-    setChangingPassword(false);
-    passwordForm.reset();
+    const passwordData = {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    };
+    changePasswordMutation.mutate(passwordData);
   };
 
   return (
@@ -115,8 +151,9 @@ const Profile = () => {
                         startIcon={<Save />}
                         onClick={profileForm.handleSubmit(onProfileSubmit)}
                         variant="contained"
+                        disabled={updateProfileMutation.isPending}
                       >
-                        Save
+                        {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
                       </Button>
                       <Button
                         startIcon={<Cancel />}
@@ -211,8 +248,9 @@ const Profile = () => {
                         startIcon={<Save />}
                         onClick={passwordForm.handleSubmit(onPasswordSubmit)}
                         variant="contained"
+                        disabled={changePasswordMutation.isPending}
                       >
-                        Update Password
+                        {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
                       </Button>
                       <Button
                         startIcon={<Cancel />}
