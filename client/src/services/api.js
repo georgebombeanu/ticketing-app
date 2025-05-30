@@ -154,12 +154,16 @@ export const faqAPI = {
   getCategories: () => api.get('/faq/categories'),
   getCategoryWithItems: (categoryId) => api.get(`/faq/categories/${categoryId}`),
   createCategory: (data) => api.post('/faq/categories', data),
+  // updateCategory: (id, data) => api.put(`/faq/categories/${id}`, data), // Not available
+  // deleteCategory: (id) => api.delete(`/faq/categories/${id}`), // Not available
   
   // Items
   getActiveFAQs: () => api.get('/faq'),
   getFAQById: (id) => api.get(`/faq/${id}`),
   searchFAQs: (searchTerm) => api.get(`/faq/search?searchTerm=${encodeURIComponent(searchTerm)}`),
   createFAQ: (data) => api.post('/faq', data),
+  // updateFAQ: (id, data) => api.put(`/faq/${id}`, data), // Not available
+  // deleteFAQ: (id) => api.delete(`/faq/${id}`), // Not available
 };
 
 export default api;
