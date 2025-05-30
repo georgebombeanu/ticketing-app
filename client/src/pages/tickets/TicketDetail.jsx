@@ -45,6 +45,7 @@ import { ticketsAPI, usersAPI, ticketStatusesAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
 import AttachmentsManager from '../../components/tickets/AttachmentsManager';
+import { renderIcon } from '../../utils/iconUtils';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -99,9 +100,14 @@ const TicketDetail = () => {
     enabled: !!ticket?.departmentId,
   });
 
-  const { data: statuses } = useQuery({
+    const { data: statuses } = useQuery({
     queryKey: ['ticket-statuses'],
     queryFn: () => ticketStatusesAPI.getAll().then(res => res.data),
+  });
+
+  const { data: priorities } = useQuery({
+    queryKey: ['ticket-priorities'],
+    queryFn: () => ticketPrioritiesAPI.getAll().then(res => res.data),
   });
 
   // Mutations with comprehensive cache invalidation
@@ -207,28 +213,46 @@ const TicketDetail = () => {
   };
 
   const PriorityChip = ({ priority }) => {
-    const colors = priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    const actualPriority = priorities?.find(p => p.name.toLowerCase() === priority.toLowerCase());
+    const colors = actualPriority 
+      ? { bg: actualPriority.color + '20', color: actualPriority.color }
+      : priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    
     return (
       <Chip
         label={priority}
+        icon={actualPriority ? renderIcon(actualPriority.icon, { sx: { color: actualPriority.color + ' !important' } }) : undefined}
         sx={{
           backgroundColor: colors.bg,
           color: colors.color,
           fontWeight: 500,
+          border: actualPriority ? `1px solid ${actualPriority.color}` : 'none',
+          '& .MuiChip-icon': {
+            color: colors.color + ' !important',
+          }
         }}
       />
     );
   };
 
   const StatusChip = ({ status }) => {
-    const colors = statusColors[status.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    const actualStatus = statuses?.find(s => s.name.toLowerCase() === status.toLowerCase());
+    const colors = actualStatus 
+      ? { bg: actualStatus.color + '20', color: actualStatus.color }
+      : statusColors[status.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    
     return (
       <Chip
         label={status}
+        icon={actualStatus ? renderIcon(actualStatus.icon, { sx: { color: actualStatus.color + ' !important' } }) : undefined}
         sx={{
           backgroundColor: colors.bg,
           color: colors.color,
           fontWeight: 500,
+          border: actualStatus ? `1px solid ${actualStatus.color}` : 'none',
+          '& .MuiChip-icon': {
+            color: colors.color + ' !important',
+          }
         }}
       />
     );

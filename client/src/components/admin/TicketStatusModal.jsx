@@ -202,6 +202,7 @@ const TicketStatusModal = ({ open, onClose, status = null }) => {
                       <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
                         <Chip
                           label={watchedName}
+                          icon={renderIcon(watchedIcon, { sx: { color: watchedColor + ' !important' } })}
                           sx={{
                             backgroundColor: watchedColor + '20', // Add transparency
                             color: watchedColor,
@@ -209,6 +210,9 @@ const TicketStatusModal = ({ open, onClose, status = null }) => {
                             fontWeight: 500,
                             fontSize: '0.875rem',
                             height: 32,
+                            '& .MuiChip-icon': {
+                              color: watchedColor + ' !important',
+                            }
                           }}
                         />
                       </Box>

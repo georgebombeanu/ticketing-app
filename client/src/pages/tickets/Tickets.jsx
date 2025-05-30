@@ -44,6 +44,7 @@ import useAuthStore from '../../store/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import BulkOperations from '../../components/tickets/BulkOperations';
 import AdvancedFilters from '../../components/tickets/AdvancedFilters';
+import { renderIcon } from '../../utils/iconUtils';
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -239,33 +240,53 @@ const Tickets = () => {
     setSelectedTickets([]);
   };
 
-  const PriorityChip = ({ priority }) => {
-    const colors = priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+  const PriorityChip = ({ priority, priorityData }) => {
+    // Use actual priority data if available, fallback to theme colors
+    const actualPriority = priorityData?.find(p => p.name.toLowerCase() === priority.toLowerCase());
+    const colors = actualPriority 
+      ? { bg: actualPriority.color + '20', color: actualPriority.color }
+      : priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    
     return (
       <Chip
         label={priority}
+        icon={actualPriority ? renderIcon(actualPriority.icon, { sx: { color: actualPriority.color + ' !important' } }) : undefined}
         size="small"
         sx={{
           backgroundColor: colors.bg,
           color: colors.color,
           fontWeight: 500,
           fontSize: '0.75rem',
+          border: actualPriority ? `1px solid ${actualPriority.color}` : 'none',
+          '& .MuiChip-icon': {
+            color: colors.color + ' !important',
+          }
         }}
       />
     );
   };
 
-  const StatusChip = ({ status }) => {
-    const colors = statusColors[status.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+  const StatusChip = ({ status, statusData }) => {
+    // Use actual status data if available, fallback to theme colors
+    const actualStatus = statusData?.find(s => s.name.toLowerCase() === status.toLowerCase());
+    const colors = actualStatus 
+      ? { bg: actualStatus.color + '20', color: actualStatus.color }
+      : statusColors[status.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    
     return (
       <Chip
         label={status}
+        icon={actualStatus ? renderIcon(actualStatus.icon, { sx: { color: actualStatus.color + ' !important' } }) : undefined}
         size="small"
         sx={{
           backgroundColor: colors.bg,
           color: colors.color,
           fontWeight: 500,
           fontSize: '0.75rem',
+          border: actualStatus ? `1px solid ${actualStatus.color}` : 'none',
+          '& .MuiChip-icon': {
+            color: colors.color + ' !important',
+          }
         }}
       />
     );
@@ -487,10 +508,10 @@ const Tickets = () => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <StatusChip status={ticket.statusName} />
+                    <StatusChip status={ticket.statusName} statusData={statuses} />
                   </TableCell>
                   <TableCell>
-                    <PriorityChip priority={ticket.priorityName} />
+                    <PriorityChip priority={ticket.priorityName} priorityData={priorities} />
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">

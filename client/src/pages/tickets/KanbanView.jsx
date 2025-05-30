@@ -13,7 +13,7 @@ import {
   ViewList,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { ticketsAPI, ticketStatusesAPI } from '../../services/api';
+import { ticketsAPI, ticketStatusesAPI, ticketPrioritiesAPI } from '../../services/api';
 import KanbanBoard from '../../components/tickets/KanbanBoard';
 
 const KanbanView = () => {
@@ -27,6 +27,11 @@ const KanbanView = () => {
   const { data: statuses, isLoading: statusesLoading } = useQuery({
     queryKey: ['ticket-statuses'],
     queryFn: () => ticketStatusesAPI.getAll().then(res => res.data),
+  });
+
+  const { data: priorities, isLoading: prioritiesLoading } = useQuery({
+    queryKey: ['ticket-priorities'],
+    queryFn: () => ticketPrioritiesAPI.getAll().then(res => res.data),
   });
 
   if (ticketsLoading || statusesLoading) {
@@ -72,8 +77,8 @@ const KanbanView = () => {
       </Box>
 
       {/* Kanban Board */}
-      {tickets && statuses ? (
-        <KanbanBoard tickets={tickets} statuses={statuses} />
+      {tickets && statuses && priorities ? (
+        <KanbanBoard tickets={tickets} statuses={statuses} priorities={priorities} />
       ) : (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>

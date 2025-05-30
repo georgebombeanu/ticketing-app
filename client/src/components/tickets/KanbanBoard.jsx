@@ -29,8 +29,9 @@ import { ticketsAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
 import { useToast } from '../../contexts/ToastContext';
+import { renderIcon } from '../../utils/iconUtils';
 
-const KanbanBoard = ({ tickets = [], statuses = [] }) => {
+const KanbanBoard = ({ tickets = [], statuses = [], priorities = [] }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, isAgent } = useAuthStore();
@@ -110,8 +111,13 @@ const KanbanBoard = ({ tickets = [], statuses = [] }) => {
     handleMenuClose();
   };
 
-  const PriorityChip = ({ priority }) => {
-    const colors = priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+  const PriorityChip = ({ priority, priorities }) => {
+    // Find the actual priority data
+    const actualPriority = priorities?.find(p => p.name.toLowerCase() === priority.toLowerCase());
+    const colors = actualPriority 
+      ? { bg: actualPriority.color + '20', color: actualPriority.color }
+      : priorityColors[priority.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+    
     return (
       <Chip
         label={priority}
@@ -122,21 +128,27 @@ const KanbanBoard = ({ tickets = [], statuses = [] }) => {
           fontWeight: 500,
           fontSize: '0.7rem',
           height: 20,
+          border: actualPriority ? `1px solid ${actualPriority.color}` : 'none',
         }}
       />
     );
   };
 
-  const StatusColumn = ({ status, tickets }) => {
-    const colors = statusColors[status.name.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
+  const StatusColumn = ({ status, tickets, priorities }) => {
+    const colors = status.color 
+      ? { bg: status.color + '20', color: status.color }
+      : statusColors[status.name.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
     
     return (
       <Paper sx={{ bgcolor: 'background.default', p: 1, height: 'fit-content' }}>
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="h6" fontWeight="bold">
-              {status.name}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {status.icon && renderIcon(status.icon, { sx: { color: colors.color, fontSize: 20 } })}
+              <Typography variant="h6" fontWeight="bold">
+                {status.name}
+              </Typography>
+            </Box>
             <Badge badgeContent={tickets.length} color="primary" />
           </Box>
           <Box
@@ -191,7 +203,7 @@ const KanbanBoard = ({ tickets = [], statuses = [] }) => {
                             #{ticket.id}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <PriorityChip priority={ticket.priorityName} />
+                            <PriorityChip priority={ticket.priorityName} priorities={priorities} />
                             {isAgent() && (
                               <IconButton
                                 size="small"
@@ -291,7 +303,7 @@ const KanbanBoard = ({ tickets = [], statuses = [] }) => {
         <Grid container spacing={2}>
           {Object.values(ticketsByStatus).map((statusGroup) => (
             <Grid item xs={12} sm={6} md={4} lg={2} key={statusGroup.id}>
-              <StatusColumn status={statusGroup} tickets={statusGroup.tickets} />
+              <StatusColumn status={statusGroup} tickets={statusGroup.tickets} priorities={priorities} />
             </Grid>
           ))}
         </Grid>
