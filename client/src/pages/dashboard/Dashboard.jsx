@@ -21,6 +21,7 @@ import {
   LinearProgress,
   Alert,
   IconButton,
+  Divider,
 } from '@mui/material';
 import {
   ConfirmationNumber,
@@ -32,11 +33,13 @@ import {
   ArrowUpward,
   ArrowDownward,
   OpenInNew,
+  BarChart,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ticketsAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
+import DashboardCharts from '../../components/dashboard/DashboardCharts';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -257,9 +260,37 @@ const Dashboard = () => {
             >
               High Priority Queue
             </Button>
+            <Button
+              variant="outlined"
+              startIcon={<BarChart />}
+              onClick={() => navigate('/tickets/kanban')}
+            >
+              Kanban Board
+            </Button>
           </Box>
         </CardContent>
       </Card>
+
+      {/* Dashboard Charts */}
+      <Box sx={{ mb: 4 }}>
+        <Card>
+          <CardContent>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" fontWeight="bold">
+                Analytics Overview
+              </Typography>
+              <Button
+                variant="text"
+                endIcon={<OpenInNew />}
+                onClick={() => navigate('/tickets')}
+              >
+                View All Tickets
+              </Button>
+            </Box>
+            <DashboardCharts tickets={allTickets || []} />
+          </CardContent>
+        </Card>
+      </Box>
 
       {/* Recent Tickets Table */}
       <Card>

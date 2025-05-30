@@ -26,6 +26,7 @@ import {
   Alert,
   InputAdornment,
   Stack,
+  Checkbox,
 } from '@mui/material';
 import {
   Add,
@@ -34,12 +35,15 @@ import {
   OpenInNew,
   Assignment,
   Clear,
+  Tune,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { ticketsAPI, ticketCategoriesAPI, ticketPrioritiesAPI, ticketStatusesAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
 import { useToast } from '../../contexts/ToastContext';
+import BulkOperations from '../../components/tickets/BulkOperations';
+import AdvancedFilters from '../../components/tickets/AdvancedFilters';
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -54,6 +58,25 @@ const Tickets = () => {
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || '');
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || '');
   const [assignedFilter, setAssignedFilter] = useState(searchParams.get('assigned') || '');
+
+  // Bulk operations state
+  const [selectedTickets, setSelectedTickets] = useState([]);
+
+  // Advanced filters state
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    search: '',
+    status: [],
+    priority: [],
+    category: [],
+    assignedTo: [],
+    department: [],
+    team: [],
+    createdBy: [],
+    dateRange: { start: null, end: null },
+    includeResolved: false,
+    includeClosed: false,
+  });
 
   // Fetch data
   const { data: tickets, isLoading: ticketsLoading, error } = useQuery({
@@ -93,34 +116,78 @@ const Tickets = () => {
     },
   });
 
-  // Filter tickets
+  // Filter tickets - enhanced to handle both basic and advanced filters
   const filteredTickets = useMemo(() => {
     if (!tickets) return [];
 
     return tickets.filter(ticket => {
-      const matchesSearch = !searchTerm || 
+      // Basic filters (for backwards compatibility)
+      const basicSearchMatch = !searchTerm || 
         ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ticket.id.toString().includes(searchTerm);
 
-      const matchesStatus = !statusFilter || 
+      const basicStatusMatch = !statusFilter || 
         ticket.statusName.toLowerCase() === statusFilter.toLowerCase();
 
-      const matchesPriority = !priorityFilter || 
+      const basicPriorityMatch = !priorityFilter || 
         ticket.priorityName.toLowerCase() === priorityFilter.toLowerCase();
 
-      const matchesCategory = !categoryFilter || 
+      const basicCategoryMatch = !categoryFilter || 
         ticket.categoryName.toLowerCase() === categoryFilter.toLowerCase();
 
-      const matchesAssigned = !assignedFilter || 
+      const basicAssignedMatch = !assignedFilter || 
         (assignedFilter === 'me' && ticket.assignedToId === user?.id) ||
         (assignedFilter === 'unassigned' && !ticket.assignedToId) ||
         (assignedFilter !== 'me' && assignedFilter !== 'unassigned' && 
          ticket.assignedToName?.toLowerCase().includes(assignedFilter.toLowerCase()));
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesAssigned;
+      // Advanced filters
+      const advancedSearchMatch = !advancedFilters.search || 
+        ticket.title.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+        ticket.description.toLowerCase().includes(advancedFilters.search.toLowerCase()) ||
+        ticket.id.toString().includes(advancedFilters.search);
+
+      const advancedStatusMatch = !advancedFilters.status?.length || 
+        advancedFilters.status.includes(ticket.statusId);
+
+      const advancedPriorityMatch = !advancedFilters.priority?.length || 
+        advancedFilters.priority.includes(ticket.priorityId);
+
+      const advancedCategoryMatch = !advancedFilters.category?.length || 
+        advancedFilters.category.includes(ticket.categoryId);
+
+      const advancedAssignedMatch = !advancedFilters.assignedTo?.length || 
+        advancedFilters.assignedTo.includes(ticket.assignedToId) ||
+        (advancedFilters.assignedTo.includes('unassigned') && !ticket.assignedToId);
+
+      const advancedDateMatch = (!advancedFilters.dateRange?.start && !advancedFilters.dateRange?.end) ||
+        (advancedFilters.dateRange?.start && new Date(ticket.createdAt) >= advancedFilters.dateRange.start) &&
+        (advancedFilters.dateRange?.end && new Date(ticket.createdAt) <= advancedFilters.dateRange.end);
+
+      // Include/exclude resolved and closed
+      const resolvedMatch = advancedFilters.includeResolved || ticket.statusName.toLowerCase() !== 'resolved';
+      const closedMatch = advancedFilters.includeClosed || ticket.statusName.toLowerCase() !== 'closed';
+
+      // Use advanced filters if any are set, otherwise use basic filters
+      const hasAdvancedFilters = advancedFilters.search || 
+        advancedFilters.status?.length || 
+        advancedFilters.priority?.length || 
+        advancedFilters.category?.length || 
+        advancedFilters.assignedTo?.length ||
+        advancedFilters.dateRange?.start ||
+        advancedFilters.dateRange?.end;
+
+      if (hasAdvancedFilters) {
+        return advancedSearchMatch && advancedStatusMatch && advancedPriorityMatch && 
+               advancedCategoryMatch && advancedAssignedMatch && advancedDateMatch &&
+               resolvedMatch && closedMatch;
+      } else {
+        return basicSearchMatch && basicStatusMatch && basicPriorityMatch && 
+               basicCategoryMatch && basicAssignedMatch;
+      }
     });
-  }, [tickets, searchTerm, statusFilter, priorityFilter, categoryFilter, assignedFilter, user?.id]);
+  }, [tickets, searchTerm, statusFilter, priorityFilter, categoryFilter, assignedFilter, advancedFilters, user?.id]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -128,7 +195,48 @@ const Tickets = () => {
     setPriorityFilter('');
     setCategoryFilter('');
     setAssignedFilter('');
+    setAdvancedFilters({
+      search: '',
+      status: [],
+      priority: [],
+      category: [],
+      assignedTo: [],
+      department: [],
+      team: [],
+      createdBy: [],
+      dateRange: { start: null, end: null },
+      includeResolved: false,
+      includeClosed: false,
+    });
     setSearchParams({});
+  };
+
+  const handleAdvancedFiltersChange = (newFilters) => {
+    setAdvancedFilters(newFilters);
+    // Clear basic filters when using advanced filters
+    setSearchTerm('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setCategoryFilter('');
+    setAssignedFilter('');
+  };
+
+  const handleTicketSelection = (ticketId) => {
+    setSelectedTickets(prev => {
+      if (prev.includes(ticketId)) {
+        return prev.filter(id => id !== ticketId);
+      } else {
+        return [...prev, ticketId];
+      }
+    });
+  };
+
+  const handleSelectionChange = (newSelection) => {
+    setSelectedTickets(newSelection);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTickets([]);
   };
 
   const PriorityChip = ({ priority }) => {
@@ -196,13 +304,22 @@ const Tickets = () => {
         </Button>
       </Box>
 
+      {/* Bulk Operations */}
+      <BulkOperations
+        tickets={filteredTickets}
+        selectedTickets={selectedTickets}
+        onSelectionChange={handleSelectionChange}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <FilterList fontSize="small" />
             <Typography variant="h6">Filters</Typography>
-            {(searchTerm || statusFilter || priorityFilter || categoryFilter || assignedFilter) && (
+            {(searchTerm || statusFilter || priorityFilter || categoryFilter || assignedFilter || 
+              advancedFilters.search || advancedFilters.status?.length || advancedFilters.priority?.length) && (
               <Button
                 size="small"
                 startIcon={<Clear />}
@@ -212,6 +329,14 @@ const Tickets = () => {
                 Clear All
               </Button>
             )}
+            <Button
+              size="small"
+              startIcon={<Tune />}
+              onClick={() => setAdvancedFiltersOpen(true)}
+              variant="outlined"
+            >
+              Advanced
+            </Button>
           </Box>
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -299,6 +424,21 @@ const Tickets = () => {
           <Table>
             <TableHead>
               <TableRow>
+                {isAgent() && (
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedTickets.length === filteredTickets.length && filteredTickets.length > 0}
+                      indeterminate={selectedTickets.length > 0 && selectedTickets.length < filteredTickets.length}
+                      onChange={() => {
+                        if (selectedTickets.length === filteredTickets.length) {
+                          setSelectedTickets([]);
+                        } else {
+                          setSelectedTickets(filteredTickets.map(t => t.id));
+                        }
+                      }}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>ID</TableCell>
                 <TableCell>Title</TableCell>
                 <TableCell>Status</TableCell>
@@ -320,6 +460,17 @@ const Tickets = () => {
                   }}
                   onClick={() => navigate(`/tickets/${ticket.id}`)}
                 >
+                  {isAgent() && (
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selectedTickets.includes(ticket.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleTicketSelection(ticket.id);
+                        }}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
                       #{ticket.id}
@@ -428,6 +579,17 @@ const Tickets = () => {
           </Box>
         )}
       </Card>
+
+      {/* Advanced Filters Drawer */}
+      <AdvancedFilters
+        open={advancedFiltersOpen}
+        onClose={() => setAdvancedFiltersOpen(false)}
+        filters={advancedFilters}
+        onFiltersChange={handleAdvancedFiltersChange}
+        categories={categories}
+        priorities={priorities}
+        statuses={statuses}
+      />
     </Box>
   );
 };

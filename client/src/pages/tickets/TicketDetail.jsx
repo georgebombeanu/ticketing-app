@@ -26,6 +26,8 @@ import {
   InputLabel,
   Select,
   LinearProgress,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -42,6 +44,7 @@ import { format } from 'date-fns';
 import { ticketsAPI, usersAPI, ticketStatusesAPI } from '../../services/api';
 import { priorityColors, statusColors } from '../../theme/theme';
 import useAuthStore from '../../store/authStore';
+import AttachmentsManager from '../../components/tickets/AttachmentsManager';
 
 const TicketDetail = () => {
   const { id } = useParams();
@@ -54,6 +57,7 @@ const TicketDetail = () => {
   const [statusDialog, setStatusDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedStatusId, setSelectedStatusId] = useState('');
+  const [currentTab, setCurrentTab] = useState(0);
 
   // Form for comments
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
@@ -76,6 +80,14 @@ const TicketDetail = () => {
   const { data: comments, refetch: refetchComments } = useQuery({
     queryKey: ['ticket-comments', id],
     queryFn: () => ticketsAPI.getComments(id, true).then(res => res.data),
+    enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const { data: attachments, refetch: refetchAttachments } = useQuery({
+    queryKey: ['ticket-attachments', id],
+    queryFn: () => ticketsAPI.getAttachments(id).then(res => res.data),
     enabled: !!id,
     staleTime: 0,
     refetchOnMount: 'always',
@@ -355,71 +367,97 @@ const TicketDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Comments Section */}
+        {/* Tabbed Content - Comments and Attachments */}
         <Card>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
+              <Tab 
+                label={`Comments (${comments?.length || 0})`} 
+                icon={<Comment />} 
+                iconPosition="start"
+              />
+              <Tab 
+                label={`Attachments (${attachments?.length || 0})`} 
+                icon={<AttachFile />} 
+                iconPosition="start"
+              />
+            </Tabs>
+          </Box>
+
           <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Comment /> Comments ({comments?.length || 0})
-            </Typography>
-
-            {/* Add Comment Form */}
-            <Paper sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
-              <form onSubmit={handleSubmit(onCommentSubmit)}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  placeholder="Add a comment..."
-                  {...register('comment', { required: 'Comment is required' })}
-                  error={!!errors.comment}
-                  helperText={errors.comment?.message}
-                  sx={{ mb: 2 }}
-                />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box>
-                    {/* Internal comment checkbox could go here */}
-                  </Box>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={<Send />}
-                    disabled={addCommentMutation.isPending}
-                  >
-                    {addCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
-                  </Button>
-                </Box>
-              </form>
-            </Paper>
-
-            {/* Comments List */}
-            <Stack spacing={2}>
-              {comments?.map((comment) => (
-                <Paper key={comment.id} sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                        {comment.userName.split(' ').map(n => n[0]).join('')}
-                      </Avatar>
-                      <Typography variant="subtitle2">{comment.userName}</Typography>
-                      {comment.isInternal && (
-                        <Chip label="Internal" size="small" color="secondary" />
-                      )}
+            {/* Comments Tab */}
+            {currentTab === 0 && (
+              <Box>
+                {/* Add Comment Form */}
+                <Paper sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
+                  <form onSubmit={handleSubmit(onCommentSubmit)}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      placeholder="Add a comment..."
+                      {...register('comment', { required: 'Comment is required' })}
+                      error={!!errors.comment}
+                      helperText={errors.comment?.message}
+                      sx={{ mb: 2 }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        {/* Internal comment checkbox could go here */}
+                      </Box>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        startIcon={<Send />}
+                        disabled={addCommentMutation.isPending}
+                      >
+                        {addCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
+                      </Button>
                     </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {format(new Date(comment.createdAt), 'PPpp')}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {comment.comment}
-                  </Typography>
+                  </form>
                 </Paper>
-              ))}
-              {(!comments || comments.length === 0) && (
-                <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 2 }}>
-                  No comments yet. Be the first to add one!
-                </Typography>
-              )}
-            </Stack>
+
+                {/* Comments List */}
+                <Stack spacing={2}>
+                  {comments?.map((comment) => (
+                    <Paper key={comment.id} sx={{ p: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
+                            {comment.userName.split(' ').map(n => n[0]).join('')}
+                          </Avatar>
+                          <Typography variant="subtitle2">{comment.userName}</Typography>
+                          {comment.isInternal && (
+                            <Chip label="Internal" size="small" color="secondary" />
+                          )}
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {format(new Date(comment.createdAt), 'PPpp')}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {comment.comment}
+                      </Typography>
+                    </Paper>
+                  ))}
+                  {(!comments || comments.length === 0) && (
+                    <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 2 }}>
+                      No comments yet. Be the first to add one!
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            )}
+
+            {/* Attachments Tab */}
+            {currentTab === 1 && (
+              <AttachmentsManager
+                ticketId={id}
+                attachments={attachments || []}
+                canUpload={isAgent()}
+                canDelete={isAgent()}
+              />
+            )}
           </CardContent>
         </Card>
       </Stack>

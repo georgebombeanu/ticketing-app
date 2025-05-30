@@ -12,7 +12,6 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Badge,
   Tooltip,
   ListItem,
   ListItemButton,
@@ -32,14 +31,15 @@ import {
   AccountCircle,
   Logout,
   Settings,
-  Notifications,
   Add,
   LightMode,
   DarkMode,
   SupportAgent,
+  ViewKanban,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 import useAuthStore from '../../store/authStore';
+import NotificationCenter from '../../components/notifications/NotificationCenter';
 
 const drawerWidth = 280;
 
@@ -85,6 +85,18 @@ const Layout = () => {
         text: 'Tickets',
         icon: <ConfirmationNumber />,
         path: '/tickets',
+        children: [
+          {
+            text: 'All Tickets',
+            icon: <ConfirmationNumber />,
+            path: '/tickets',
+          },
+          {
+            text: 'Kanban Board',
+            icon: <ViewKanban />,
+            path: '/tickets/kanban',
+          },
+        ],
       },
     ];
 
@@ -155,6 +167,75 @@ const Layout = () => {
             return <Divider key={index} sx={{ my: 1 }} />;
           }
 
+          // Handle items with children (like Tickets)
+          if (item.children) {
+            const isParentActive = location.pathname.startsWith(item.path);
+            
+            return (
+              <React.Fragment key={item.text}>
+                <ListItem disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => {
+                      navigate(item.path);
+                      if (isMobile) setMobileOpen(false);
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      mx: 1,
+                      backgroundColor: isParentActive ? 'primary.main' : 'transparent',
+                      color: isParentActive ? 'primary.contrastText' : 'inherit',
+                      '&:hover': {
+                        backgroundColor: isParentActive 
+                          ? 'primary.dark' 
+                          : 'action.hover',
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: isParentActive ? 'primary.contrastText' : 'inherit',
+                        minWidth: 40,
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.text} />
+                  </ListItemButton>
+                </ListItem>
+                
+                {/* Child items */}
+                {item.children.map((child) => {
+                  const isChildActive = location.pathname === child.path;
+                  return (
+                    <ListItem key={child.text} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => {
+                          navigate(child.path);
+                          if (isMobile) setMobileOpen(false);
+                        }}
+                        sx={{
+                          borderRadius: 2,
+                          mx: 1,
+                          ml: 3,
+                          backgroundColor: isChildActive ? 'action.selected' : 'transparent',
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          {child.icon}
+                        </ListItemIcon>
+                        <ListItemText primary={child.text} />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </React.Fragment>
+            );
+          }
+
+          // Regular navigation items
           const isActive = location.pathname === item.path || 
             (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
 
@@ -265,14 +346,8 @@ const Layout = () => {
               </IconButton>
             </Tooltip>
 
-            {/* Notifications */}
-            <Tooltip title="Notifications">
-              <IconButton color="inherit">
-                <Badge badgeContent={3} color="error">
-                  <Notifications />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            {/* Notifications - Updated to use NotificationCenter */}
+            <NotificationCenter />
 
             {/* Profile Menu */}
             <Tooltip title="Account">
