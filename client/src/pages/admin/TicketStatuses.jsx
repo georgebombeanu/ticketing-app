@@ -30,18 +30,12 @@ import {
   Edit,
   MoreVert,
   Delete,
-  CheckCircle,
-  Schedule,
-  PlayArrow,
-  Pause,
-  Stop,
-  Cancel,
 } from '@mui/icons-material';
 import { ticketStatusesAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import useAuthStore from '../../store/authStore';
 import TicketStatusModal from '../../components/admin/TicketStatusModal';
-import { statusColors } from '../../theme/theme';
+import { renderIcon } from '../../utils/iconUtils';
 
 const TicketStatuses = () => {
   const queryClient = useQueryClient();
@@ -111,58 +105,22 @@ const TicketStatuses = () => {
     }
   };
 
-  const getStatusIcon = (statusName) => {
-    const name = statusName.toLowerCase();
-    switch (name) {
-      case 'open':
-        return <PlayArrow sx={{ color: 'info.main' }} />;
-      case 'in progress':
-        return <Schedule sx={{ color: 'warning.main' }} />;
-      case 'pending':
-        return <Pause sx={{ color: 'secondary.main' }} />;
-      case 'resolved':
-        return <CheckCircle sx={{ color: 'success.main' }} />;
-      case 'closed':
-        return <Stop sx={{ color: 'grey.500' }} />;
-      case 'cancelled':
-        return <Cancel sx={{ color: 'error.main' }} />;
-      default:
-        return <Schedule />;
-    }
-  };
-
   const getStatusChip = (status) => {
-    const colors = statusColors[status.name.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
     return (
       <Chip
         label={status.name}
-        size="small"
+        icon={renderIcon(status.icon, { sx: { color: status.color + ' !important' } })}
         sx={{
-          backgroundColor: colors.bg,
-          color: colors.color,
+          backgroundColor: status.color + '20',
+          color: status.color,
+          border: `1px solid ${status.color}`,
           fontWeight: 500,
+          '& .MuiChip-icon': {
+            color: status.color + ' !important',
+          }
         }}
-        icon={getStatusIcon(status.name)}
       />
     );
-  };
-
-  const getStatusType = (statusName) => {
-    const name = statusName.toLowerCase();
-    if (['resolved', 'closed'].includes(name)) return 'Final';
-    if (['cancelled'].includes(name)) return 'Terminal';
-    if (['in progress', 'pending'].includes(name)) return 'Active';
-    return 'Initial';
-  };
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'Final': return 'success';
-      case 'Terminal': return 'error';
-      case 'Active': return 'warning';
-      case 'Initial': return 'info';
-      default: return 'default';
-    }
   };
 
   if (!isAdmin()) {
@@ -185,7 +143,7 @@ const TicketStatuses = () => {
             Ticket Statuses
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage ticket workflow states and transitions ({statuses?.length || 0} statuses)
+            Manage ticket workflow states ({statuses?.length || 0} statuses)
           </Typography>
         </Box>
         <Button
@@ -197,19 +155,6 @@ const TicketStatuses = () => {
         </Button>
       </Box>
 
-      {/* Status Guidelines */}
-      <Card sx={{ mb: 3, p: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
-        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-          🔄 Status Workflow Guidelines
-        </Typography>
-        <Typography variant="body2">
-          <strong>Initial:</strong> Open, New - Tickets just created<br/>
-          <strong>Active:</strong> In Progress, Pending - Tickets being worked on<br/>
-          <strong>Final:</strong> Resolved, Closed - Tickets completed successfully<br/>
-          <strong>Terminal:</strong> Cancelled, Rejected - Tickets ended without resolution
-        </Typography>
-      </Card>
-
       {/* Statuses Table */}
       <Card>
         <TableContainer>
@@ -218,7 +163,6 @@ const TicketStatuses = () => {
               <TableRow>
                 <TableCell>Status</TableCell>
                 <TableCell>Description</TableCell>
-                <TableCell>Type</TableCell>
                 <TableCell>Usage</TableCell>
                 <TableCell>Visual</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -229,7 +173,7 @@ const TicketStatuses = () => {
                 <TableRow key={status.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getStatusIcon(status.name)}
+                      {renderIcon(status.icon, { sx: { color: status.color } })}
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
                           {status.name}
@@ -253,15 +197,6 @@ const TicketStatuses = () => {
                     >
                       {status.description || 'No description'}
                     </Typography>
-                  </TableCell>
-                  
-                  <TableCell>
-                    <Chip
-                      label={getStatusType(status.name)}
-                      size="small"
-                      color={getTypeColor(getStatusType(status.name))}
-                      variant="outlined"
-                    />
                   </TableCell>
                   
                   <TableCell>
@@ -290,7 +225,6 @@ const TicketStatuses = () => {
 
         {(!statuses || statuses.length === 0) && (
           <Box sx={{ textAlign: 'center', py: 6 }}>
-            <Schedule sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No statuses found
             </Typography>

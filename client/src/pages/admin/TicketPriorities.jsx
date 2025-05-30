@@ -30,16 +30,12 @@ import {
   Edit,
   MoreVert,
   Delete,
-  PriorityHigh,
-  KeyboardArrowUp,
-  KeyboardArrowDown,
-  Remove,
 } from '@mui/icons-material';
 import { ticketPrioritiesAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import useAuthStore from '../../store/authStore';
 import TicketPriorityModal from '../../components/admin/TicketPriorityModal';
-import { priorityColors } from '../../theme/theme';
+import { renderIcon } from '../../utils/iconUtils';
 
 const TicketPriorities = () => {
   const queryClient = useQueryClient();
@@ -109,35 +105,20 @@ const TicketPriorities = () => {
     }
   };
 
-  const getPriorityIcon = (priorityName) => {
-    const name = priorityName.toLowerCase();
-    switch (name) {
-      case 'critical':
-      case 'urgent':
-        return <KeyboardArrowUp sx={{ color: 'error.main' }} />;
-      case 'high':
-        return <PriorityHigh sx={{ color: 'error.main' }} />;
-      case 'medium':
-        return <Remove sx={{ color: 'warning.main' }} />;
-      case 'low':
-        return <KeyboardArrowDown sx={{ color: 'info.main' }} />;
-      default:
-        return <PriorityHigh />;
-    }
-  };
-
   const getPriorityChip = (priority) => {
-    const colors = priorityColors[priority.name.toLowerCase()] || { bg: '#f5f5f5', color: '#666' };
     return (
       <Chip
         label={priority.name}
-        size="small"
+        icon={renderIcon(priority.icon, { sx: { color: priority.color + ' !important' } })}
         sx={{
-          backgroundColor: colors.bg,
-          color: colors.color,
+          backgroundColor: priority.color + '20',
+          color: priority.color,
+          border: `1px solid ${priority.color}`,
           fontWeight: 500,
+          '& .MuiChip-icon': {
+            color: priority.color + ' !important',
+          }
         }}
-        icon={getPriorityIcon(priority.name)}
       />
     );
   };
@@ -162,7 +143,7 @@ const TicketPriorities = () => {
             Ticket Priorities
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage ticket priority levels and their ordering ({priorities?.length || 0} priorities)
+            Manage ticket priority levels ({priorities?.length || 0} priorities)
           </Typography>
         </Box>
         <Button
@@ -173,19 +154,6 @@ const TicketPriorities = () => {
           Add Priority
         </Button>
       </Box>
-
-      {/* Priority Guidelines */}
-      <Card sx={{ mb: 3, p: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
-        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-          🎯 Priority Level Guidelines
-        </Typography>
-        <Typography variant="body2">
-          <strong>Critical/Urgent:</strong> System down, security issues, complete service disruption<br/>
-          <strong>High:</strong> Major functionality broken, affects many users<br/>
-          <strong>Medium:</strong> Important but workaround exists, affects some users<br/>
-          <strong>Low:</strong> Minor issues, cosmetic problems, enhancement requests
-        </Typography>
-      </Card>
 
       {/* Priorities Table */}
       <Card>
@@ -205,7 +173,7 @@ const TicketPriorities = () => {
                 <TableRow key={priority.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getPriorityIcon(priority.name)}
+                      {renderIcon(priority.icon, { sx: { color: priority.color } })}
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
                           {priority.name}
@@ -257,7 +225,6 @@ const TicketPriorities = () => {
 
         {(!priorities || priorities.length === 0) && (
           <Box sx={{ textAlign: 'center', py: 6 }}>
-            <PriorityHigh sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
               No priorities found
             </Typography>

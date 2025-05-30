@@ -36,6 +36,10 @@ import {
   DarkMode,
   SupportAgent,
   ViewKanban,
+  Category,
+  PriorityHigh,
+  Schedule,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 import useAuthStore from '../../store/authStore';
@@ -50,7 +54,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { user, logout, isAgent, isManager } = useAuthStore();
+  const { user, logout, isAgent, isManager, isAdmin } = useAuthStore();
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -100,7 +104,7 @@ const Layout = () => {
       },
     ];
 
-    // Add admin items for managers and above
+    // Add management items for managers and above
     if (isManager()) {
       items.push(
         { divider: true },
@@ -118,6 +122,35 @@ const Layout = () => {
           text: 'Teams',
           icon: <Groups />,
           path: '/teams',
+        }
+      );
+    }
+
+    // Add admin items for admins only
+    if (isAdmin()) {
+      items.push(
+        { divider: true },
+        {
+          text: 'Admin',
+          icon: <AdminPanelSettings />,
+          path: '/admin',
+          children: [
+            {
+              text: 'Categories',
+              icon: <Category />,
+              path: '/admin/categories',
+            },
+            {
+              text: 'Priorities',
+              icon: <PriorityHigh />,
+              path: '/admin/priorities',
+            },
+            {
+              text: 'Statuses',
+              icon: <Schedule />,
+              path: '/admin/statuses',
+            },
+          ],
         }
       );
     }
@@ -167,7 +200,7 @@ const Layout = () => {
             return <Divider key={index} sx={{ my: 1 }} />;
           }
 
-          // Handle items with children (like Tickets)
+          // Handle items with children (like Tickets and Admin)
           if (item.children) {
             const isParentActive = location.pathname.startsWith(item.path);
             
@@ -346,7 +379,7 @@ const Layout = () => {
               </IconButton>
             </Tooltip>
 
-            {/* Notifications - Updated to use NotificationCenter */}
+            {/* Notifications */}
             <NotificationCenter />
 
             {/* Profile Menu */}

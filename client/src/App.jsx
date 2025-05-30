@@ -6,6 +6,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider } from './components/auth/AuthProvider';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import AdminOverview from './pages/admin/AdminOverview';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -119,6 +120,14 @@ function App() {
                     
                     {/* Admin Management - Admin only */}
                     <Route path="admin">
+                      <Route 
+                        index
+                        element={
+                          <ProtectedRoute requireRole={['Admin']}>
+                            <AdminOverview />
+                          </ProtectedRoute>
+                        } 
+                      />
                       <Route 
                         path="categories" 
                         element={
