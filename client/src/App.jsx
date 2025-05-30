@@ -1,4 +1,3 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppThemeProvider } from './contexts/ThemeContext';
@@ -26,6 +25,11 @@ import KanbanView from './pages/tickets/KanbanView';
 import Users from './pages/users/Users';
 import Departments from './pages/departments/Departments';
 import Teams from './pages/teams/Teams';
+
+// Admin Pages (Admin only)
+import TicketCategories from './pages/admin/TicketCategories';
+import TicketPriorities from './pages/admin/TicketPriorities';
+import TicketStatuses from './pages/admin/TicketStatuses';
 
 // Other Pages
 import FAQ from './pages/faq/FAQ';
@@ -112,6 +116,34 @@ function App() {
                         </ProtectedRoute>
                       } 
                     />
+                    
+                    {/* Admin Management - Admin only */}
+                    <Route path="admin">
+                      <Route 
+                        path="categories" 
+                        element={
+                          <ProtectedRoute requireRole={['Admin']}>
+                            <TicketCategories />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="priorities" 
+                        element={
+                          <ProtectedRoute requireRole={['Admin']}>
+                            <TicketPriorities />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="statuses" 
+                        element={
+                          <ProtectedRoute requireRole={['Admin']}>
+                            <TicketStatuses />
+                          </ProtectedRoute>
+                        } 
+                      />
+                    </Route>
                     
                     {/* FAQ - Available to all authenticated users */}
                     <Route path="faq" element={<FAQ />} />

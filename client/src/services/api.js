@@ -166,4 +166,35 @@ export const faqAPI = {
   // deleteFAQ: (id) => api.delete(`/faq/${id}`), // Not available
 };
 
+// Files API
+export const filesAPI = {
+  upload: (formData) => {
+    // Create a new axios instance without JSON content-type for file uploads
+    const fileApi = axios.create({
+      baseURL: api.defaults.baseURL,
+      timeout: 30000, // Longer timeout for file uploads
+    });
+    
+    // Add auth header
+    const token = useAuthStore.getState().token;
+    if (token) {
+      fileApi.defaults.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return fileApi.post('/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  
+  download: (fileId) => api.get(`/files/download/${fileId}`, {
+    responseType: 'blob', // Important for file downloads
+  }),
+  
+  delete: (fileId) => api.delete(`/files/${fileId}`),
+  
+  getMetadata: (fileId) => api.get(`/files/${fileId}/metadata`),
+};
+
 export default api;

@@ -54,6 +54,7 @@ const FAQ = () => {
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedPanel, setExpandedPanel] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState({});
 
   // Modal states
   const [faqModalOpen, setFaqModalOpen] = useState(false);
@@ -77,32 +78,44 @@ const FAQ = () => {
     queryFn: () => faqAPI.getCategories().then(res => res.data),
   });
 
-  // Remove unused mutations and states since backend doesn't support update/delete
-  // const deleteFaqMutation = ...
-  // const deleteCategoryMutation = ...
-  // const [confirmDialog, setConfirmDialog] = useState({ open: false, item: null, type: null });
-
   // Filter FAQs based on search term only (all are active from the API)
   const filteredFAQs = faqs?.filter(faq => 
     faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
     faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  // Group FAQs by category, but don't treat "General" as a real category
-  const faqsByCategory = filteredFAQs.reduce((acc, faq) => {
-    const categoryName = faq.categoryName || 'Uncategorized';
-    if (!acc[categoryName]) {
-      acc[categoryName] = [];
+  // Group FAQs by category with proper category data
+  const faqsByCategory = categories?.reduce((acc, category) => {
+    const categoryFAQs = filteredFAQs.filter(faq => faq.categoryId === category.id);
+    if (categoryFAQs.length > 0) {
+      acc[category.id] = {
+        category,
+        faqs: categoryFAQs,
+      };
     }
-    acc[categoryName].push(faq);
     return acc;
-  }, {});
+  }, {}) || {};
 
-  // Get actual categories (not including "General" or uncategorized)
-  const realCategories = categories?.filter(cat => cat.name !== 'General') || [];
+  // Handle uncategorized FAQs
+  const uncategorizedFAQs = filteredFAQs.filter(faq => 
+    !categories?.some(cat => cat.id === faq.categoryId)
+  );
+  if (uncategorizedFAQs.length > 0) {
+    faqsByCategory['uncategorized'] = {
+      category: { id: 'uncategorized', name: 'General', description: 'General questions and answers' },
+      faqs: uncategorizedFAQs,
+    };
+  }
 
   const handlePanelChange = (panel) => (event, isExpanded) => {
     setExpandedPanel(isExpanded ? panel : false);
+  };
+
+  const handleCategoryToggle = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
 
   const handleCreateFaq = () => {
@@ -219,81 +232,107 @@ const FAQ = () => {
 
       {/* FAQ Categories and Items */}
       {Object.keys(faqsByCategory).length > 0 ? (
-        <Stack spacing={3}>
-          {Object.entries(faqsByCategory).map(([categoryName, categoryFAQs]) => {
-            const category = realCategories.find(cat => cat.name === categoryName);
-            const isUncategorized = categoryName === 'Uncategorized';
+        <Stack spacing={2}>
+          {Object.entries(faqsByCategory).map(([categoryId, { category, faqs: categoryFAQs }]) => {
+            const isExpanded = expandedCategories[categoryId] ?? true; // Default to expanded
+            const isUncategorized = categoryId === 'uncategorized';
             
             return (
-              <Card key={categoryName}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Card key={categoryId}>
+                {/* Category Header - Clickable to expand/collapse */}
+                <CardContent 
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    pb: isExpanded ? 2 : 2
+                  }}
+                  onClick={() => handleCategoryToggle(categoryId)}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Help color="primary" />
                       <Typography variant="h6" fontWeight="bold">
-                        {isUncategorized ? 'General' : categoryName}
+                        {category.name}
                       </Typography>
                       <Chip label={`${categoryFAQs.length} items`} size="small" />
+                      <ExpandMore 
+                        sx={{ 
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.3s'
+                        }} 
+                      />
                     </Box>
-                    {isAgent() && category && !isUncategorized && (
+                    {isAgent() && category.id !== 'uncategorized' && (
                       <IconButton
                         size="small"
-                        onClick={(e) => handleMenuOpen(e, category, 'category')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, category, 'category');
+                        }}
                       >
                         <MoreVert fontSize="small" />
                       </IconButton>
                     )}
                   </Box>
 
-                  {category?.description && !isUncategorized && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {category.description && !isUncategorized && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 4 }}>
                       {category.description}
                     </Typography>
                   )}
-
-                  <Stack spacing={1}>
-                    {categoryFAQs.map((faq) => (
-                      <Accordion
-                        key={faq.id}
-                        expanded={expandedPanel === `faq-${faq.id}`}
-                        onChange={handlePanelChange(`faq-${faq.id}`)}
-                      >
-                        <AccordionSummary
-                          expandIcon={<ExpandMore />}
-                          aria-controls={`faq-${faq.id}-content`}
-                          id={`faq-${faq.id}-header`}
-                        >
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="medium" sx={{ flex: 1 }}>
-                              {faq.question}
-                            </Typography>
-                            {isAgent() && (
-                              <IconButton
-                                size="small"
-                                onClick={(e) => handleMenuOpen(e, faq, 'faq')}
-                              >
-                                <MoreVert fontSize="small" />
-                              </IconButton>
-                            )}
-                          </Box>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ whiteSpace: 'pre-wrap' }}
-                          >
-                            {faq.answer}
-                          </Typography>
-                          <Divider sx={{ my: 2 }} />
-                          <Typography variant="caption" color="text.secondary">
-                            Created by {faq.createdByName} • Last updated: {format(new Date(faq.updatedAt), 'PPP')}
-                          </Typography>
-                        </AccordionDetails>
-                      </Accordion>
-                    ))}
-                  </Stack>
                 </CardContent>
+
+                {/* Category Content - FAQ Items */}
+                {isExpanded && (
+                  <Box sx={{ px: 3, pb: 3 }}>
+                    <Stack spacing={1}>
+                      {categoryFAQs.map((faq) => (
+                        <Accordion
+                          key={faq.id}
+                          expanded={expandedPanel === `faq-${faq.id}`}
+                          onChange={handlePanelChange(`faq-${faq.id}`)}
+                          sx={{ boxShadow: 1 }}
+                        >
+                          <AccordionSummary
+                            expandIcon={<ExpandMore />}
+                            aria-controls={`faq-${faq.id}-content`}
+                            id={`faq-${faq.id}-header`}
+                          >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 1 }}>
+                              <Typography variant="subtitle1" fontWeight="medium" sx={{ flex: 1 }}>
+                                {faq.question}
+                              </Typography>
+                              {isAgent() && (
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMenuOpen(e, faq, 'faq');
+                                  }}
+                                >
+                                  <MoreVert fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Box>
+                          </AccordionSummary>
+                          <AccordionDetails>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ whiteSpace: 'pre-wrap' }}
+                            >
+                              {faq.answer}
+                            </Typography>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="caption" color="text.secondary">
+                              Created by {faq.createdByName} • Last updated: {format(new Date(faq.updatedAt), 'PPP')}
+                            </Typography>
+                          </AccordionDetails>
+                        </Accordion>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
               </Card>
             );
           })}
