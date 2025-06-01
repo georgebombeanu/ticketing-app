@@ -34,7 +34,6 @@ import {
   Add,
   LightMode,
   DarkMode,
-  SupportAgent,
   ViewKanban,
   Category,
   PriorityHigh,
@@ -44,6 +43,95 @@ import {
 import { useTheme as useAppTheme } from '../../contexts/ThemeContext';
 import useAuthStore from '../../store/authStore';
 import NotificationCenter from '../../components/notifications/NotificationCenter';
+
+// Custom TicketBoom Logo Component - Technical Gear Design
+const TicketBoomLogo = ({ size = 32 }) => {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      style={{ display: 'block' }}
+    >
+      <defs>
+        <linearGradient id="gearGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#37474f" />
+          <stop offset="100%" stopColor="#607d8b" />
+        </linearGradient>
+        <radialGradient id="sparkGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffeb3b" />
+          <stop offset="100%" stopColor="#ff9800" />
+        </radialGradient>
+        <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#f5f5f5" />
+        </linearGradient>
+      </defs>
+      
+      {/* Main gear */}
+      <g transform="translate(32,32)">
+        {/* Outer gear ring */}
+        <circle cx="0" cy="0" r="18" fill="url(#gearGradient)" stroke="#263238" strokeWidth="1"/>
+        
+        {/* Gear teeth */}
+        <rect x="-2" y="-20" width="4" height="4" fill="url(#gearGradient)"/>
+        <rect x="-20" y="-2" width="4" height="4" fill="url(#gearGradient)"/>
+        <rect x="16" y="-2" width="4" height="4" fill="url(#gearGradient)"/>
+        <rect x="-2" y="16" width="4" height="4" fill="url(#gearGradient)"/>
+        
+        {/* Diagonal teeth */}
+        <g transform="rotate(45)">
+          <rect x="-2" y="-20" width="4" height="4" fill="url(#gearGradient)"/>
+          <rect x="-20" y="-2" width="4" height="4" fill="url(#gearGradient)"/>
+          <rect x="16" y="-2" width="4" height="4" fill="url(#gearGradient)"/>
+          <rect x="-2" y="16" width="4" height="4" fill="url(#gearGradient)"/>
+        </g>
+        
+        {/* Inner circle */}
+        <circle cx="0" cy="0" r="10" fill="url(#centerGradient)" stroke="#607d8b" strokeWidth="1"/>
+        
+        {/* "B" letter in center */}
+        <text x="0" y="4" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#37474f" fontFamily="Arial, sans-serif">
+          B
+        </text>
+        
+        {/* Small inner details */}
+        <circle cx="0" cy="0" r="3" fill="none" stroke="#607d8b" strokeWidth="1" opacity="0.6"/>
+      </g>
+      
+      {/* Sparks and explosion effect */}
+      <g transform="translate(52, 12)">
+        <circle cx="0" cy="0" r="5" fill="url(#sparkGradient)"/>
+        {/* Spark rays */}
+        <path d="M0 -5 L1 -8 L0 -6 L-1 -8 Z" fill="#ffeb3b"/>
+        <path d="M5 0 L8 1 L6 0 L8 -1 Z" fill="#ff9800"/>
+        <path d="M0 5 L1 8 L0 6 L-1 8 Z" fill="#ffeb3b"/>
+        <path d="M-5 0 L-8 1 L-6 0 L-8 -1 Z" fill="#ff9800"/>
+        
+        {/* Additional sparkles */}
+        <circle cx="7" cy="-7" r="1.5" fill="#ffcc02"/>
+        <circle cx="-5" cy="5" r="1" fill="#ff6b35"/>
+        <circle cx="8" cy="3" r="0.8" fill="#ffc107"/>
+      </g>
+      
+      {/* Motion lines for dynamic effect */}
+      <g opacity="0.6">
+        <line x1="8" y1="8" x2="4" y2="4" stroke="#607d8b" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="56" y1="56" x2="60" y2="60" stroke="#607d8b" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="10" y1="54" x2="6" y2="58" stroke="#607d8b" strokeWidth="1.5" strokeLinecap="round"/>
+      </g>
+      
+      {/* Additional small gears for technical feel */}
+      <g transform="translate(50, 50)" opacity="0.4">
+        <circle cx="0" cy="0" r="4" fill="url(#gearGradient)"/>
+        <rect x="-1" y="-5" width="2" height="2" fill="url(#gearGradient)"/>
+        <rect x="-1" y="3" width="2" height="2" fill="url(#gearGradient)"/>
+        <rect x="-5" y="-1" width="2" height="2" fill="url(#gearGradient)"/>
+        <rect x="3" y="-1" width="2" height="2" fill="url(#gearGradient)"/>
+      </g>
+    </svg>
+  );
+};
 
 const drawerWidth = 280;
 
@@ -182,10 +270,10 @@ const Layout = () => {
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <SupportAgent sx={{ fontSize: 32, color: 'primary.main' }} />
+        <TicketBoomLogo size={32} />
         <Box>
           <Typography variant="h6" fontWeight="bold">
-            TicketFlow
+            TicketBoom
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {user?.firstName} {user?.lastName}
